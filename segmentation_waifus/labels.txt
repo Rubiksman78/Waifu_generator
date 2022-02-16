@@ -1,0 +1,44 @@
+[
+  {
+    "name": "hair",
+    "id": 791659,
+    "color": "#4240b7",
+    "attributes": []
+  },
+  {
+    "name": "eyes",
+    "id": 791660,
+    "color": "#2699ae",
+    "attributes": []
+  },
+  {
+    "name": "clothes",
+    "id": 791661,
+    "color": "#802000",
+    "attributes": []
+  },
+  {
+    "name": "face",
+    "id": 791662,
+    "color": "#90e8ce",
+    "attributes": []
+  },
+  {
+    "name": "skin",
+    "id": 791663,
+    "color": "#63a94d",
+    "attributes": []
+  },
+  {
+    "name": "background",
+    "id": 791664,
+    "color": "#000000",
+    "attributes": []
+  },
+  {
+    "name": "mouth",
+    "id": 791665,
+    "color": "#ffe8b1",
+    "attributes": []
+  }
+]
