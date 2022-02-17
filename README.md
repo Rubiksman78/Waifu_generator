@@ -13,7 +13,7 @@
 - Comment sauvegarder les images annotées:
     - Mettre les images d'origine dans segmentation_waifus/images/training/
     - Mettre les masques de segmentation dans segmentation-waifus/annotations/training/
-    -
+   
 ## Génération de waifus HD conditionnée
 
 - GauGAN
