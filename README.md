@@ -3,17 +3,20 @@
 ## DCGAN
 
 - DCGAN pour générer des waifus en 64 sur 64 et autres tests infructueux (PROGAN,ResNetGAN)
-- utilitaire pour extraire un dataset d'un dossier d'images
+- Utilitaire pour extraire un dataset d'un dossier d'images
 
-![Résultats obtenus](https://gitlab.viarezo.fr/2021sithakousa/waifu_generator/-/blob/main/images/anime2.gif "Waifus DCGAN")
 ## Segmentation de waifus
 
-- labels et leur couleur RGB associée
-- waifus et leurs masques de segmentation en couleur 
-- utilitaire pour créer un dataset avec image réelle + masque de segmentation + masque one - hot
-
+- Labels et leur couleur RGB associée
+- Waifus et leurs masques de segmentation en couleur 
+- Utilitaire pour créer un dataset avec image réelle + masque de segmentation + masque one - hot
+- Comment sauvegarder les images annotées:
+    - Mettre les images d'origine dans segmentation_waifus/images/training/
+    - Mettre les masques de segmentation dans segmentation-waifus/annotations/training/
+    -
 ## Génération de waifus HD conditionnée
 
 - GauGAN
+
 ## GUI de qualité
 
