@@ -9,7 +9,7 @@ from model import *
 batch_size = 4
 buffer_size = 100
 
-
+dataset_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/segmentation_waifus/images/'
 def define_dataset(dataset_path, batch_size, buffer_size):
     training_data = "training/"
     val_data = "validation/"
@@ -38,7 +38,7 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         .batch(batch_size)
         .map(Augment())
         .map(One_Hot())
-        .repeat()
+        .repeat(15)
         .prefetch(buffer_size=tf.data.AUTOTUNE))
 
     test_batches = test_images.batch(batch_size).map(One_Hot())
@@ -66,13 +66,23 @@ for images, masks ,true_masks in train_batches.take(3):
     display([sample_image,sample_mask])
 """
 u_net = UNET(model)
-u_net.compile(keras.optimizers.Adam(learning_rate=4e-4,beta_1=0.5),model_loss=Dice_CE)
+u_net.compile(keras.optimizers.Adam(learning_rate=4e-4,beta_1=0.5),model_loss=DiceBCELoss)
+
+class save_weights(keras.callbacks.Callback):
+    def on_epoch_end(self,epoch,logs=None):
+        self.model.save_weights("u_net_weights.h5")
+
+class DisplayCallback(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        clear_output(wait=False)
+        show_predictions(test_batches,num=1)
+        print ('\nSample Prediction after epoch {}\n'.format(epoch+1))
 
 def create_mask(pred_mask):
     mask = inv_mask(pred_mask)
     return mask
 
-def show_predictions(dataset=None, num=2):
+def show_predictions(dataset=None, num=3):
     if dataset:
         for image, _, true_mask in dataset.take(num):
             pred_mask = u_net.predict(image)
@@ -88,6 +98,5 @@ n_epochs = 20
 history = u_net.fit(
     train_batches,
     epochs=n_epochs,
-    steps_per_epoch=200,
     validation_data=test_batches,
     callbacks=[DisplayCallback(),save_weights()])

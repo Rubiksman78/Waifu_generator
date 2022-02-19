@@ -71,7 +71,6 @@ def define_u_net(classes,img_shape):
     return model
 
 model = define_u_net(7,img_shape=(128,128,3))
-
 loss_tracker = keras.metrics.Mean(name="loss")
 acc_metric = keras.metrics.CategoricalAccuracy(name="accuracy")
 
@@ -117,13 +116,3 @@ class UNET(keras.models.Model):
 
     def call(self,inputs):
         return self.model(inputs)
-
-class save_weights(keras.callbacks.Callback):
-    def on_epoch_end(self,epoch,logs=None):
-        self.model.save_weights("u_net_weights.h5")
-
-class DisplayCallback(tf.keras.callbacks.Callback):
-    def on_epoch_end(self, epoch, logs=None):
-        clear_output(wait=True)
-        show_predictions(test_batches,num=1)
-        print ('\nSample Prediction after epoch {}\n'.format(epoch+1))

@@ -5,16 +5,6 @@ import glob
 from tensorflow import keras
 from keras import layers
 
-im_test = np.asarray(cv2.imread(
-    "C:/SAMUEL/Centrale/Automatants/Waifu_generator/segmentation_waifus/annotations/validation/10075_result.png"))
-L = []
-for i in range(len(im_test)):
-    for j in range(len(im_test[0])):
-        for k in range(3):
-            if im_test[i,j,k] not in L:
-                L.append(im_test[i,j,k])
-print(L)
-
 hair = str([66, 64, 183])
 eyes = str([38,153,174])
 clothes = str([128,32,0])
