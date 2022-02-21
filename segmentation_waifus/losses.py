@@ -13,13 +13,13 @@ def DiceBCELoss(targets, inputs, smooth=1e-6):
     BCE =  binary_crossentropy(targets, inputs)
     intersection = tf.reduce_sum(targets * inputs)  
     dice_loss = 1 - (2*intersection + smooth) / (tf.reduce_sum(targets) + tf.reduce_sum(inputs) + smooth)
-    Dice_BCE = BCE + dice_loss
+    Dice_BCE = BCE + 2*dice_loss
     return Dice_BCE
 
 def Dice_CE(y_true, y_pred):
-    y_true = tf.cast(y_true, tf.float32)
-    o = tf.nn.sigmoid_cross_entropy_with_logits(y_true, y_pred) + soft_dice_loss(y_true, y_pred)
-    return tf.reduce_mean(o)
+    #y_true = tf.cast(y_true, tf.float32)
+    o = keras.losses.CategoricalCrossentropy()(y_true, y_pred) + soft_dice_loss(y_true, y_pred)
+    return o
 
 def focal_loss(alpha=0.25, gamma=2):
     def focal_loss_with_logits(logits, targets, alpha, gamma, y_pred):

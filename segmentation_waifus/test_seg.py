@@ -2,7 +2,9 @@ from pathlib import Path
 from PIL import Image
 import numpy as np
 import cv2
+from model import u_net_pretrained
 from Unet import *
+import matplotlib.pyplot as plt
 
 def usingPILandShrink(f,size): 
     im = Image.open(f)  
@@ -28,11 +30,12 @@ def load_images(n,path,size):
             break
     return dataset
 
-dataset = load_images(16,"D:/Datasets/dataset_92000_256",128)
+dataset = load_images(16,"D:/Datasets/dataset_92000_256",256)
 test_dataset = np.asarray(dataset)
-#np.save("unet_test_dataset.npy",test_dataset)
-u_net.load_weights('u_net_weights.h5')
+u_net = u_net_pretrained(7,(256,256,3))
+u_net.load_weights('segmentation_waifus/u_net_weights.h5')
 preds = u_net.predict(test_dataset)
+
 for i in range(16):
     images = [test_dataset[i],create_mask(np.expand_dims(preds[i],axis=0))]
     figure = plt.figure(figsize=(5,5))

@@ -24,7 +24,7 @@ palette = np.array([
     [255,232,177]
 ],np.uint8)
 
-def inv_mask(mask):
+def inv_mask(mask):#Prend un masque one-hot encoded et renvoie son équivalent image couleur
     global palette
     size = mask.shape[1]
     palette2 = tf.constant(palette,dtype=tf.uint8)
@@ -35,7 +35,8 @@ def inv_mask(mask):
     color_image = tf.reshape(color_image, [size, size, 3])
     return color_image
 
-def normalize_maskbis(img):
+def normalize_maskbis(img):#Prend un masque couleur et renvoie son équivalent avec seulement les classes voulues
+    #(W,H,255) -> (W,H,num_classes)
     semantic_map = []
     for colour in palette:
         class_map = tf.reduce_all(tf.equal(img, colour), axis=-1)
@@ -45,6 +46,7 @@ def normalize_maskbis(img):
     return semantic_map 
 
 def parse_image(img_path: str) -> dict:
+    #Renvoie un dictionnaire image + masque pour être encodé + masque couleur pour l'affichage
     image = tf.io.read_file(img_path)
     image = tf.image.decode_jpeg(image, channels=3)
     image = tf.image.convert_image_dtype(image, tf.uint8)
@@ -65,22 +67,25 @@ def parse_image(img_path: str) -> dict:
     return {'image': image, 'segmentation_mask': label_mask,"true_mask":mask}
 
 def normalize(input_image):
+    #Normalise [0,255] -> [0,1]
     input_image = tf.cast(input_image,tf.float32)/255.0
     return input_image
 
 def load_image(datapoint,im_size=128):
+    #Redimensionne toutes les images et normalise l'image d'origine
     input_image = tf.image.resize(datapoint['image'],(im_size,im_size))
     input_mask = tf.image.resize(datapoint['segmentation_mask'],(im_size,im_size))
     true_mask = tf.image.resize(datapoint['true_mask'],(im_size,im_size))
     input_image = normalize(input_image)
     return input_image,input_mask,true_mask
 class Augment(tf.keras.layers.Layer):
-    def __init__(self, seed=37):
+    #Data Augment : rotation + flip 
+    def __init__(self, seed=42):
         super().__init__()
         # both use the same seed, so they'll make the same random changes.
-        self.augment_inputs = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.05,fill_mode = "constant",seed=seed)])
-        self.augment_labels = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.05,fill_mode = "constant",seed=seed)])
-        self.augment_true_labels = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.05,fill_mode = "constant",seed=seed)])    
+        self.augment_inputs = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.1,fill_mode = "constant",seed=seed)])
+        self.augment_labels = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.1,fill_mode = "constant",seed=seed)])
+        self.augment_true_labels = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.1,fill_mode = "constant",seed=seed)])    
     
     def call(self, inputs, labels ,true_labels):
         inputs = self.augment_inputs(inputs)
@@ -96,3 +101,10 @@ class One_Hot(tf.keras.layers.Layer):
         res = normalize_maskbis(labels)
         return inputs, res, true_labels
 
+class One_Hot_bis(tf.keras.layers.Layer):
+    def __init__(self):
+        super().__init__()
+    
+    def call(self, inputs, labels ,true_labels):
+        res = normalize_maskbis(labels)
+        return inputs, res, true_labels
