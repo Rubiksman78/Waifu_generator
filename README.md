@@ -30,3 +30,9 @@ Améliorations : DICE loss, autres architecturess
 
 ## GUI de qualité
 
+- Programme pour dessiner sur une image avec des couleurs spécifiques (celles de la segmentation)
+- Importer un masque de segmentation déjà fait à modifier avec le programme précédent
+- (Choix de couleurs pour une partie)
+- Coloriage d'une partie contourée (genre bouton remplissage de forme)
+- Prédiction du modèle sur le masque après tout ce traitement
+- Affichage de l'image générée à droite (éventuellement en direct si possible)

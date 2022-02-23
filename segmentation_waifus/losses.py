@@ -13,7 +13,7 @@ def DiceBCELoss(targets, inputs, smooth=1e-6):
     BCE =  binary_crossentropy(targets, inputs)
     intersection = tf.reduce_sum(targets * inputs)  
     dice_loss = 1 - (2*intersection + smooth) / (tf.reduce_sum(targets) + tf.reduce_sum(inputs) + smooth)
-    Dice_BCE = BCE + 2*dice_loss
+    Dice_BCE = BCE + dice_loss
     return Dice_BCE
 
 def Dice_CE(y_true, y_pred):

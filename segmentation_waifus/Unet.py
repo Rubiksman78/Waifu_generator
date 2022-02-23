@@ -11,7 +11,7 @@ perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/'
 batch_size = 4
 buffer_size = 500
 img_size = 256
-num_classes= 7 
+num_classes= 7
 dataset_path = perso_path + 'segmentation_waifus/images/'
 
 def define_dataset(dataset_path, batch_size, buffer_size):
@@ -111,7 +111,7 @@ def train(model):
         callbacks=[DisplayCallback(),save_weights()])
     return history
 
-#hist = train(u_net)
+hist = train(u_net)
 # %%
 from pathlib import Path
 from PIL import Image
