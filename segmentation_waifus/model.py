@@ -3,7 +3,7 @@ from tensorflow import keras
 from keras import layers,models
 import tensorflow_addons as tfa
 
-im_size = 256
+im_size = 512
 im_shape = (im_size,im_size,3)
 ###Modèle UNET: MobileNetV2 encodeur + Conv2D / Upsampling2D décodeur
 def mobile_net_block(input,filters,strides,kernel_size):

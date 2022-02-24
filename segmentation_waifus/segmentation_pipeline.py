@@ -71,7 +71,7 @@ def normalize(input_image):
     input_image = tf.cast(input_image,tf.float32)/255.0
     return input_image
 
-def load_image(datapoint,im_size=128):
+def load_image(datapoint,im_size=512):
     #Redimensionne toutes les images et normalise l'image d'origine
     input_image = tf.image.resize(datapoint['image'],(im_size,im_size))
     input_mask = tf.image.resize(datapoint['segmentation_mask'],(im_size,im_size))

@@ -10,7 +10,7 @@ from model import *
 perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
 batch_size = 4
 buffer_size = 1000
-img_size = 256
+img_size = 512
 num_classes= 7
 dataset_path = perso_path + 'segmentation_waifus/images/'
 
@@ -111,7 +111,7 @@ def train(model):
         callbacks=[DisplayCallback(),save_weights()])
     return history
 
-hist = train(u_net)
+#hist = train(u_net)
 # %%
 from pathlib import Path
 from PIL import Image
@@ -144,15 +144,15 @@ def load_images(n,path,size):
             break
     return dataset
 
-dataset = load_images(4,"D:/Datasets/dataset_92000_256",256)
+dataset = load_images(1,"D:/Datasets/dataset_92000_256",512)
 test_dataset = np.asarray(dataset)
 model = u_net.model
-model.load_weights(perso_path + 'segmentation_waifus/u_net_weights.h5',
+model.load_weights(perso_path + 'segmentation_waifus/test_weights.h5',
  by_name = True,
  skip_mismatch = True)
-preds = u_net.predict(test_dataset)
+preds = model.predict(test_dataset)
 
-for i in range(4):
+for i in range(1):
     images = [test_dataset[i],create_mask(np.expand_dims(preds[i],axis=0))]
     figure = plt.figure(figsize=(5,5))
     for j in range(2):
