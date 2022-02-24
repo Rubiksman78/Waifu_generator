@@ -1,7 +1,7 @@
 # Waifu_generator
 
 Projet de génération de personnages d'anime à l'aide de GAN principalement.
-![alt_text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/2c92a21fdc74875e53193bc2bffbd6cc00cf6b33_original.jpeg?raw=True)
+![alt_text]()
 Une première étape est d'utiliser un DCGAN pour générer des visages de manière aléatoire.
 
 Ensuite l'objectif est de générer des personnages réalistes à partir de masques de segmentation pouvant être dessinés à la main. Ceci se fait avec GauGAN.

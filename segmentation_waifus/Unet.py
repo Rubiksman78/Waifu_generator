@@ -1,4 +1,5 @@
 #%%
+from fcntl import DN_ACCESS
 import tensorflow as tf
 from tensorflow import keras
 import matplotlib.pyplot as plt
@@ -75,7 +76,7 @@ arch = u_net_pretrained(num_classes,(img_size,img_size,3))
 u_net = UNET(arch)
 u_net.compile(
     keras.optimizers.Adam(learning_rate=4e-4,beta_1=0.5),
-    model_loss=focal_loss)
+    model_loss=DiceBCELoss)
 
 #%%
 class save_weights(keras.callbacks.Callback):

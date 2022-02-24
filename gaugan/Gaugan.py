@@ -8,18 +8,13 @@ import tensorflow_addons as tfa
 import cv2
 from glob import glob
 from PIL import Image
-from segmentation_waifus.segmentation_pipeline import * 
-
+from xgboost import train
+from segmentation_pipeline_bis import * 
 #%%
-dataset_path = "segmentations_waifus/images/"
-training_data = "training/"
-val_data = "validation/"
-TRAINSET_SIZE = len(glob(dataset_path + training_data + "*.jpg"))
-print(f"The Training Dataset contains {TRAINSET_SIZE} images.")
-VALSET_SIZE = len(glob(dataset_path + val_data + "*.jpg"))
-print(f"The Validation Dataset contains {VALSET_SIZE} images.")
+perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
+dataset_path = perso_path + 'segmentation_waifus/images/'
 
-BATCH_SIZE = 2
+BATCH_SIZE = 4
 IMG_HEIGHT = IMG_WIDTH = 128
 NUM_CLASSES = 7
 buffer_size = 100
@@ -48,13 +43,13 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         train_images
         .cache()
         .shuffle(buffer_size)
-        .batch(batch_size)
+        .batch(batch_size,drop_remainder=True)
         .map(Augment())
         .map(One_Hot_bis())
         .repeat(20)
         .prefetch(buffer_size=tf.data.AUTOTUNE))
 
-    test_batches = test_images.batch(batch_size).map(One_Hot())
+    test_batches = test_images.batch(batch_size,drop_remainder=True).map(One_Hot_bis())
     return train_batches, test_batches
 
 def display(display_list):
@@ -68,7 +63,7 @@ def display(display_list):
     plt.show()
 
 train_batches,test_batches = define_dataset(dataset_path,BATCH_SIZE,buffer_size)
-
+print(train_batches)
 for images,true_masks,masks in train_batches.take(3):
     sample_image,sample_mask = images[0],true_masks[0]
     display([sample_image,sample_mask])
@@ -82,7 +77,7 @@ print(f"One-hot encoded label map shape: {sample_train_batch[2].shape}.")
 for segmentation_map, real_image in zip(sample_train_batch[1], sample_train_batch[0]):
     fig = plt.figure(figsize=(10, 10))
     fig.add_subplot(1, 2, 1).set_title("Segmentation Map")
-    plt.imshow((segmentation_map + 1) / 2)
+    plt.imshow(segmentation_map/255)
     fig.add_subplot(1, 2, 2).set_title("Real Image")
     plt.imshow((real_image + 1) / 2)
     plt.show()
@@ -412,7 +407,7 @@ class GanMonitor(keras.callbacks.Callback):
                     ax[0].imshow((self.val_images[1][row] + 1) / 2)
                     ax[0].axis("off")
                     ax[0].set_title("Mask", fontsize=20)
-                    ax[1].imshow((self.val_images[0][row] + 1) / 2)
+                    ax[1].imshow(self.val_images[0][row]/255)
                     ax[1].axis("off")
                     ax[1].set_title("Ground Truth", fontsize=20)
                     ax[2].imshow((generated_images[row] + 1) / 2)
@@ -423,7 +418,7 @@ class GanMonitor(keras.callbacks.Callback):
 gaugan = GauGAN(IMG_HEIGHT,NUM_CLASSES,BATCH_SIZE,latent_dim=256)
 gaugan.compile()
 #%%
-gaugan.fit(train_batches,steps_per_epoch = 100,validation_data=test_batches,epochs=20,callbacks=[GanMonitor(train_batches,1)])
+gaugan.fit(train_batches,steps_per_epoch = 100,epochs=20,callbacks=[GanMonitor(train_batches,1)])
 # %%
 from pathlib import Path
 
