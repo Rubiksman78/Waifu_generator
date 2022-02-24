@@ -15,6 +15,8 @@ Ensuite l'objectif est de générer des personnages réalistes à partir de masq
 
 Segementation avec U-NET. 
 
+Tuto U-net : https://keras.io/examples/vision/oxford_pets_image_segmentation/
+Tuto transfer learning mobilenetv2 : https://www.tensorflow.org/tutorials/images/segmentation
 Améliorations : DICE loss, autres architecturess
 - Labels et leur couleur RGB associée
 - Waifus et leurs masques de segmentation en couleur 
