@@ -8,9 +8,9 @@ from losses import *
 from model import * 
 
 perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
-batch_size = 4
+batch_size = 8
 buffer_size = 1000
-img_size = 512
+img_size = 128
 num_classes= 7
 dataset_path = perso_path + 'segmentation_waifus/images/'
 
@@ -53,7 +53,6 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         .repeat(20))
     return train_batches, test_batches
 
-
 def display(display_list):
     plt.figure(figsize=(15, 15))
     title = ['Input Image', 'True Mask', 'Predicted Mask']
@@ -76,7 +75,7 @@ arch = u_net_pretrained(num_classes,(img_size,img_size,3))
 u_net = UNET(arch)
 u_net.compile(
     keras.optimizers.Adam(learning_rate=4e-4,beta_1=0.5),
-    model_loss=DiceBCELoss)
+    model_loss=focal_loss)
 
 #%%
 class save_weights(keras.callbacks.Callback):
@@ -111,7 +110,7 @@ def train(model):
         callbacks=[DisplayCallback(),save_weights()])
     return history
 
-#hist = train(u_net)
+hist = train(u_net)
 # %%
 from pathlib import Path
 from PIL import Image

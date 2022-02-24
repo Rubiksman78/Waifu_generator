@@ -33,7 +33,7 @@ def load_images(n,path,size):
 dataset = load_images(16,"D:/Datasets/dataset_92000_256",256)
 test_dataset = np.asarray(dataset)
 u_net = u_net_pretrained(7,(256,256,3))
-u_net.load_weights('segmentation_waifus/u_net_weights.h5')
+u_net.load_weights('segmentation_waifus/test_weights.h5')
 preds = u_net.predict(test_dataset)
 
 for i in range(16):

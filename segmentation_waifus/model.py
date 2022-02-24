@@ -3,7 +3,7 @@ from tensorflow import keras
 from keras import layers,models
 import tensorflow_addons as tfa
 
-im_size = 512
+im_size = 128
 im_shape = (im_size,im_size,3)
 ###Modèle UNET: MobileNetV2 encodeur + Conv2D / Upsampling2D décodeur
 def mobile_net_block(input,filters,strides,kernel_size):
@@ -108,7 +108,7 @@ def u_net_pretrained(classes,img_shape):
         x = layers.Concatenate()([to_add,x])
         i += 1
     x = layers.UpSampling2D()(x)
-    x = layers.Conv2DTranspose(classes,1,activation='softmax')(x)
+    x = layers.Conv2D(classes,1,activation='softmax')(x)
     model = models.Model(input,x)
     return model
 
