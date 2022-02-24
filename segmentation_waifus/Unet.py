@@ -7,9 +7,9 @@ from IPython.display import clear_output
 from losses import * 
 from model import * 
 
-perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/'
+perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
 batch_size = 4
-buffer_size = 500
+buffer_size = 1000
 img_size = 256
 num_classes= 7
 dataset_path = perso_path + 'segmentation_waifus/images/'
@@ -111,7 +111,7 @@ def train(model):
         callbacks=[DisplayCallback(),save_weights()])
     return history
 
-#hist = train(u_net)
+hist = train(u_net)
 # %%
 from pathlib import Path
 from PIL import Image
