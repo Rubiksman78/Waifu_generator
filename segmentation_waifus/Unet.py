@@ -146,7 +146,7 @@ def load_images(n,path,size):
 
 dataset = load_images(1,"D:/Datasets/dataset_92000_256",512)
 test_dataset = np.asarray(dataset)
-model = u_net.model
+model = arch
 model.load_weights(perso_path + 'segmentation_waifus/test_weights.h5',
  by_name = True,
  skip_mismatch = True)
