@@ -111,7 +111,7 @@ def train(model):
         callbacks=[DisplayCallback(),save_weights()])
     return history
 
-hist = train(u_net)
+#hist = train(u_net)
 # %%
 from pathlib import Path
 from PIL import Image

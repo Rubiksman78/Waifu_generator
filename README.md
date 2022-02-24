@@ -27,7 +27,7 @@ Améliorations : DICE loss, autres architecturess
 ## Génération de waifus HD conditionnée
 
 - GauGAN
-
+- Tuto architecture de base : https://keras.io/examples/generative/gaugan/
 ## GUI de qualité
 
 - Programme pour dessiner sur une image avec des couleurs spécifiques (celles de la segmentation)

@@ -103,7 +103,7 @@ def u_net_pretrained(classes,img_shape):
         x = layers.Conv2D(filters_up[i],3,padding='same')(x)
         x = tfa.layers.InstanceNormalization()(x)
         x = layers.LeakyReLU(alpha=0.2)(x)
-        x = layers.Dropout(0.5)(x)
+        x = layers.Dropout(0.8)(x)
         to_add = layers.Conv2D(filters_up[i],1,padding='same')(skip)
         x = layers.Concatenate()([to_add,x])
         i += 1
