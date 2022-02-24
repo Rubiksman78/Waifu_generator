@@ -19,14 +19,14 @@ Tuto U-net : https://keras.io/examples/vision/oxford_pets_image_segmentation/
 
 Tuto transfer learning mobilenetv2 : https://www.tensorflow.org/tutorials/images/segmentation
 
-Améliorations : DICE loss, autres architecturess
+Améliorations : DICE loss, autres architecturess (Deeplab, convolutions atrous)
 - Labels et leur couleur RGB associée
 - Waifus et leurs masques de segmentation en couleur 
 - Utilitaire pour créer un dataset avec image réelle + masque de segmentation + masque one - hot
-- 
+- Diverses autres fonctions (loss,model,test_seg)
 - Comment sauvegarder les images annotées:
-    - Mettre les images d'origine dans segmentation_waifus/images/training/
-    - Mettre les masques de segmentation dans segmentation-waifus/annotations/training/
+    - Mettre les images d'origine dans "segmentation_waifus/images/training/"
+    - Mettre les masques de segmentation dans "segmentation-waifus/annotations/training/"
    
 ## Génération de waifus HD conditionnée
 
