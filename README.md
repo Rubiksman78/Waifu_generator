@@ -13,6 +13,7 @@ Ensuite l'objectif est de générer des personnages réalistes à partir de masq
 - Résultats obtenus :
 
 ![alt text](https://github.com/Rubiksman78/Waifu_generator/tree/main/images/generated_images_e064.png?raw=true)
+
 ## Segmentation de waifus
 
 Segementation avec U-NET. 
