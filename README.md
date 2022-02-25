@@ -11,7 +11,7 @@ Ensuite l'objectif est de générer des personnages réalistes à partir de masq
 - DCGAN pour générer des waifus en 64 sur 64 et autres tests infructueux (PROGAN,ResNetGAN)
 - Utilitaire pour extraire un dataset d'un dossier d'images
 - Résultats obtenus :
-![image](https://github.com/Rubiksman78/Waifu_generator/tree/main/images/generated_images_e064.png?raw=true)
+![image](https://github.com/Rubiksman78/Waifu_generator/tree/main/images/generated_images_e064.png?raw=True)
 ## Segmentation de waifus
 
 Segementation avec U-NET. 
