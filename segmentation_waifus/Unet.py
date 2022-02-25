@@ -1,5 +1,4 @@
 #%%
-from fcntl import DN_ACCESS
 import tensorflow as tf
 from tensorflow import keras
 import matplotlib.pyplot as plt
@@ -9,9 +8,9 @@ from losses import *
 from model import * 
 
 perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
-batch_size = 8
-buffer_size = 1000
-img_size = 128
+batch_size = 4
+buffer_size = 500
+img_size = 256
 num_classes= 7
 dataset_path = perso_path + 'segmentation_waifus/images/'
 
