@@ -12,7 +12,7 @@ Ensuite l'objectif est de générer des personnages réalistes à partir de masq
 - Utilitaire pour extraire un dataset d'un dossier d'images
 - Résultats obtenus :
 
-![alt text](https://github.com/Rubiksman78/Waifu_generator/tree/main/images/generated_images_e064.png?raw=true)
+![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/generated_images_e064.png?raw=true)
 
 ## Segmentation de waifus
 
