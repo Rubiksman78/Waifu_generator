@@ -3,7 +3,7 @@ from tensorflow import keras
 from keras import layers,models
 import tensorflow_addons as tfa
 
-im_size = 256
+im_size = 64
 im_shape = (im_size,im_size,3)
 ###Modèle UNET: MobileNetV2 encodeur + Conv2D / Upsampling2D décodeur
 def mobile_net_block(input,filters,strides,kernel_size):
@@ -78,18 +78,18 @@ def define_u_net(classes,img_shape):
 #model = define_u_net(7,img_shape=(128,128,3))
 
 ###Modèle UNET : MobileNetV2 préentraîné imagenet + Même chose décodeur
-base_model = tf.keras.applications.mobilenet_v2.MobileNetV2(input_shape=im_shape,include_top=False,weights='imagenet')
-layer_names = [
-    'block_1_expand_relu',
-    'block_3_expand_relu',
-    'block_6_expand_relu',
-    'block_13_expand_relu',
-    'block_16_project',
-]
-base_model_outputs = [base_model.get_layer(name).output for name in layer_names]
-down = models.Model(inputs=base_model.input,outputs=base_model_outputs)
-
 def u_net_pretrained(classes,img_shape):
+    base_model = tf.keras.applications.mobilenet_v2.MobileNetV2(input_shape=img_shape,include_top=False,weights='imagenet')
+    layer_names = [
+        'block_1_expand_relu',
+        'block_3_expand_relu',
+        'block_6_expand_relu',
+        'block_13_expand_relu',
+        'block_16_project',
+    ]
+    base_model_outputs = [base_model.get_layer(name).output for name in layer_names]
+    down = models.Model(inputs=base_model.input,outputs=base_model_outputs)
+
     input = models.Input(shape=img_shape)
     #init = 'he_normal'
     skips = down(input)
@@ -113,6 +113,7 @@ def u_net_pretrained(classes,img_shape):
     return model
 
 #u_net = u_net_pretrained(7,im_shape)
+#print(len(u_net.layers))
 #u_net.summary()
 
 ###Classe UNET pour entraîner tout ça

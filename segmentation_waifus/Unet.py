@@ -8,9 +8,9 @@ from losses import *
 from model import * 
 
 perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
-batch_size = 4
-buffer_size = 500
-img_size = 256
+batch_size = 32
+buffer_size = 100
+img_size = 64
 num_classes= 7
 dataset_path = perso_path + 'segmentation_waifus/images/'
 
@@ -50,7 +50,7 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         .batch(batch_size)
         .map(Augment())
         .map(One_Hot())
-        .repeat(20))
+        .repeat(1))
     return train_batches, test_batches
 
 def display(display_list):
@@ -71,16 +71,27 @@ for images, masks ,true_masks in train_batches.take(3):
     display([sample_image,sample_mask])
 """
 
+#%%
 arch = u_net_pretrained(num_classes,(img_size,img_size,3))
 u_net = UNET(arch)
 u_net.compile(
     keras.optimizers.Adam(learning_rate=4e-4,beta_1=0.5),
     model_loss=DiceBCELoss)
-
 #%%
 class save_weights(keras.callbacks.Callback):
+    def __init__(self,mod):
+        self.mod = mod.model
+
     def on_epoch_end(self,epoch,logs=None):
-        self.model.save_weights(perso_path + "segmentation_waifus/u_net_weights.h5")
+        couches = self.mod.layers
+        n = len(couches)
+        weights = []
+        for i in range(2,n):
+            weight = couches[i].get_weights()
+            weights.append(weight)
+        weights = np.array(weights)
+        np.save(perso_path + "segmentation_waifus/u_net.npy",weights)
+        #self.model.save_weights(perso_path + "segmentation_waifus/u_net.h5")
 
 class DisplayCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
@@ -101,16 +112,15 @@ def show_predictions(dataset=None, num=3):
         display([sample_image, sample_mask,
                  create_mask(u_net.predict(sample_image[tf.newaxis, ...]))])
 
-def train(model):
+def train(arch):
     n_epochs = 20
-    history = model.fit(
+    arch.fit(
         train_batches,
         epochs=n_epochs,
         validation_data=test_batches,
-        callbacks=[DisplayCallback(),save_weights()])
-    return history
+        callbacks=[DisplayCallback(),save_weights(arch)])
 
-hist = train(u_net)
+train(u_net)
 # %%
 from pathlib import Path
 from PIL import Image
@@ -134,23 +144,25 @@ def load_images(n,path,size):
                 im = im.astype('uint8')
                 im = cv2.resize(im, dsize=(size,size), interpolation=cv2.INTER_CUBIC)
                 dataset.append(im)
+                it += 1
             except:
                 continue
-            it += 1
             if it % 1000==0:
                 print(it)
         else:
             break
     return dataset
 
-dataset = load_images(1,"D:/Datasets/dataset_92000_256",512)
+dataset = load_images(1,"D:/Datasets/dataset_140000_512",64)
 test_dataset = np.asarray(dataset)
-model = arch
-model.load_weights(perso_path + 'segmentation_waifus/test_weights.h5',
- by_name = True,
- skip_mismatch = True)
-preds = model.predict(test_dataset)
-
+model_bis = u_net.model
+#model_bis.load_weights(perso_path + 'segmentation_waifus/u_net_weights.h5')
+weights = np.load(perso_path + "segmentation_waifus/u_net.npy",allow_pickle=True)
+n = weights.shape[0]
+for i in range(n):
+    model_bis.layers[i+2].set_weights(weights[i])
+preds = model_bis.predict(test_dataset)
+a = model_bis.get_weights()
 for i in range(1):
     images = [test_dataset[i],create_mask(np.expand_dims(preds[i],axis=0))]
     figure = plt.figure(figsize=(5,5))
