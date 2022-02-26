@@ -157,12 +157,15 @@ dataset = load_images(1,"D:/Datasets/dataset_140000_512",64)
 test_dataset = np.asarray(dataset)
 model_bis = u_net.model
 #model_bis.load_weights(perso_path + 'segmentation_waifus/u_net_weights.h5')
+
+##Charger les poids en tant qu'array numpy
 weights = np.load(perso_path + "segmentation_waifus/u_net.npy",allow_pickle=True)
 n = weights.shape[0]
+
 for i in range(n):
     model_bis.layers[i+2].set_weights(weights[i])
 preds = model_bis.predict(test_dataset)
-a = model_bis.get_weights()
+
 for i in range(1):
     images = [test_dataset[i],create_mask(np.expand_dims(preds[i],axis=0))]
     figure = plt.figure(figsize=(5,5))
