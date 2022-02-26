@@ -174,4 +174,3 @@ for i in range(1):
         plt.axis('off')
         plt.imshow(images[j])
 plt.show()
-# %%
