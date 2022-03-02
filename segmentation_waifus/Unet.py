@@ -8,9 +8,9 @@ from losses import *
 from model import * 
 
 perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
-batch_size = 32
+batch_size = 4
 buffer_size = 100
-img_size = 64
+img_size = 256
 num_classes= 7
 dataset_path = perso_path + 'segmentation_waifus/images/'
 
@@ -42,7 +42,7 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         .batch(batch_size)
         .map(Augment())
         .map(One_Hot())
-        .repeat(20)
+        .repeat(25)
         .prefetch(buffer_size=tf.data.AUTOTUNE))
 
     test_batches = (
@@ -112,6 +112,7 @@ def show_predictions(dataset=None, num=3):
         display([sample_image, sample_mask,
                  create_mask(u_net.predict(sample_image[tf.newaxis, ...]))])
 
+#%%
 def train(arch):
     n_epochs = 20
     arch.fit(
@@ -174,3 +175,4 @@ for i in range(1):
         plt.axis('off')
         plt.imshow(images[j])
 plt.show()
+# %%

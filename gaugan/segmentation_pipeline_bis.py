@@ -83,9 +83,9 @@ class Augment(tf.keras.layers.Layer):
     def __init__(self, seed=42):
         super().__init__()
         # both use the same seed, so they'll make the same random changes.
-        self.augment_inputs = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.3,fill_mode = "constant",seed=seed)])
-        self.augment_labels = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.3,fill_mode = "constant",seed=seed)])
-        self.augment_true_labels = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.3,fill_mode = "constant",seed=seed)])    
+        self.augment_inputs = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.5,fill_mode = "constant",seed=seed)])
+        self.augment_labels = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.5,fill_mode = "constant",seed=seed)])
+        self.augment_true_labels = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.5,fill_mode = "constant",seed=seed)])    
     
     def call(self, inputs, labels ,true_labels):
         inputs = self.augment_inputs(inputs)
