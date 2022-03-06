@@ -42,13 +42,12 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         .batch(batch_size)
         .map(Augment())
         .map(One_Hot())
-        .repeat(25)
+        .repeat(20)
         .prefetch(buffer_size=tf.data.AUTOTUNE))
 
     test_batches = (
         test_images
         .batch(batch_size)
-        .map(Augment())
         .map(One_Hot())
         .repeat(1))
     return train_batches, test_batches
@@ -75,7 +74,7 @@ for images, masks ,true_masks in train_batches.take(3):
 arch = u_net_pretrained(num_classes,(img_size,img_size,3))
 u_net = UNET(arch)
 u_net.compile(
-    keras.optimizers.Adam(learning_rate=4e-4,beta_1=0.5),
+    keras.optimizers.Adam(learning_rate=4e-4,beta_1=0.0),
     model_loss=DiceBCELoss)
 #%%
 class save_weights(keras.callbacks.Callback):
@@ -154,25 +153,49 @@ def load_images(n,path,size):
             break
     return dataset
 
-dataset = load_images(1,"D:/Datasets/dataset_140000_512",64)
-test_dataset = np.asarray(dataset)
-model_bis = u_net.model
-#model_bis.load_weights(perso_path + 'segmentation_waifus/u_net_weights.h5')
+#test = load_images(10000,"D:/Datasets/dataset_140000_512",256)
+#np.save("dataset_test_seg.npy",test)
+
+#%%
+test_dataset = tf.keras.utils.image_dataset_from_directory(
+  "D:/Datasets/dataset_140000_512",
+  labels=None,
+  image_size=(256, 256),
+  batch_size=4)
+
+n_pairs = 10
+#test_dataset = tf.data.Dataset.from_tensor_slices(dataset).batch(4)
+model = u_net.model
 
 ##Charger les poids en tant qu'array numpy
-weights = np.load(perso_path + "segmentation_waifus/u_net.npy",allow_pickle=True)
-n = weights.shape[0]
+def load_weights(model,weights_path):
+    weights = np.load(weights_path,allow_pickle=True)
+    n = weights.shape[0]
+    for i in range(n):
+        model.layers[i+2].set_weights(weights[i])
 
-for i in range(n):
-    model_bis.layers[i+2].set_weights(weights[i])
-preds = model_bis.predict(test_dataset)
+def show_pairs(true_images):
+    j = 0
+    for true_image in true_images.take(10000):
+        preds = model.predict(true_image)
+        for i,image in enumerate(true_image):
+            images = [image.numpy().astype('uint8'),create_mask(np.expand_dims(preds[i],axis=0)).numpy()]
+            #figure = plt.figure(figsize=(5,5))
+            #plt.subplot(1,2,1)
+            #plt.axis('off')
+            #plt.imshow(images[0])
+            #plt.subplot(1,2,2)
+            #plt.axis('off')
+            #plt.imshow(images[1])
+            im = Image.fromarray(images[0])
+            im.save(perso_path+f"crash_test_gaugan/images/training/{i+j}.jpg")
+            mask = Image.fromarray(images[1])
+            mask.save(perso_path+f"crash_test_gaugan/annotations/training/{i+j}.png")
+        j += 4
+        #plt.show()
 
-for i in range(1):
-    images = [test_dataset[i],create_mask(np.expand_dims(preds[i],axis=0))]
-    figure = plt.figure(figsize=(5,5))
-    for j in range(2):
-        plt.subplot(1,2,j+1)
-        plt.axis('off')
-        plt.imshow(images[j])
-plt.show()
+load_weights(model,perso_path + "segmentation_waifus/u_net.npy")
+#preds = model.predict(test_dataset)
+
+show_pairs(test_dataset)
 # %%
