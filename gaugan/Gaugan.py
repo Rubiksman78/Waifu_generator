@@ -14,10 +14,10 @@ from pathlib import Path
 perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
 dataset_path = perso_path + 'crash_test_gaugan/images/'
 
-BATCH_SIZE = 4
+BATCH_SIZE =16
 IMG_HEIGHT = IMG_WIDTH = 64
 NUM_CLASSES = 7
-buffer_size = 100
+buffer_size = 50
 
 def define_dataset(dataset_path, batch_size, buffer_size):
     training_data = "training/"
@@ -43,7 +43,7 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         train_images
         .cache()
         .shuffle(buffer_size)
-        .take(1000)
+        .take(10000)
         .batch(batch_size,drop_remainder=True)
         .map(Augment())
         .map(One_Hot_bis())
@@ -84,6 +84,14 @@ for segmentation_map, real_image in zip(sample_train_batch[1], sample_train_batc
     plt.imshow((real_image + 1) / 2)
     plt.show()
 """
+class save_weights(keras.callbacks.Callback):
+    def __init__(self):
+        super(save_weights,self).__init__()
+
+    def on_epoch_end(self,epoch,logs=None):
+        self.model.generator.save_weights(f'gen_weights.h5')
+        self.model.discriminator.save_weights(f'disc_weights.h5')
+
 class GanMonitor(keras.callbacks.Callback):
     def __init__(self, val_dataset, n_samples, epoch_interval=1):
         self.val_images = next(iter(val_dataset))
@@ -117,60 +125,37 @@ class GanMonitor(keras.callbacks.Callback):
 # %%
 gaugan = GauGAN(IMG_HEIGHT,NUM_CLASSES,BATCH_SIZE,latent_dim=256)
 gaugan.compile()
+gaugan.generator.load_weights('gen_weights1.h5')
+gaugan.discriminator.load_weights('disc_weights1.h5')
 #%%
-gaugan.fit(train_batches,epochs=100,callbacks=[GanMonitor(train_batches,1)])
+gaugan.fit(train_batches,epochs=100,callbacks=[GanMonitor(train_batches,1),save_weights()])
 # %%
+###Test 
+test_dataset = tf.keras.utils.image_dataset_from_directory(
+  "C:/SAMUEL/Centrale/Automatants/Waifu_generator/segmentation_waifus/annotations/training/",
+  labels=None,
+  image_size=(64, 64),
+  batch_size=4).map(normalize_maskbis)
 
-###Partie Test à mettre à jour (outdated)
-def usingPILandShrink(f,size): 
-    im = Image.open(f)  
-    im.draft('RGB',(size,size))
-    return np.asarray(im)
 
-def load_images(n,path,size):    
-    dataset = []
-    it = 0
-    for filename in Path(path).glob("*.png"):
-        if it <= n:
-            try:
-                im=usingPILandShrink(filename,size)
-                im = im.astype('uint8')
-                im = cv2.resize(im, dsize=(size,size), interpolation=cv2.INTER_CUBIC)
-                im = normalize_maskbis(im)
-                dataset.append(im)
-            except:
-                continue
-            it += 1
-            if it % 1000==0:
-                print(it)
-        else:
-            break
-    return dataset
-
-dataset = load_images(3,"C:/SAMUEL/Centrale/Automatants/Waifu_generator/segmentation_waifus/annotations/validation/",IMG_HEIGHT)
-test_dataset = np.asarray(dataset)
-print(test_dataset.shape)
-#%%
-#np.save("unet_test_dataset.npy",test_dataset)
+n_pairs = 10
 gen = gaugan.generator
 
-##Get style
-im = Image.open("C:/SAMUEL/Centrale/Automatants/Waifu_generator/segmentation_waifus/images/training/240083745_221966026608647_1925481989853930899_n_ccexpress.jpg")
-im.draft('RGB',(IMG_HEIGHT,IMG_HEIGHT))
-im = np.asarray(im)
-im = cv2.resize(im, dsize=(IMG_HEIGHT,IMG_HEIGHT), interpolation=cv2.INTER_CUBIC)
-im = np.asarray([im])
-enc = gaugan.encoder
-moy,var = enc(im,256)
-style = tf.random.normal((1,256),mean=0,stddev=1.0)
-##
+def show_pairs(true_images):
+    j = 0
+    style = tf.random.normal((4,256))
+    for true_image in true_images.take(3):
+        preds = gen([style,true_image])
+        for image in preds:
+            image = (image*0.5+0.5).numpy()
+            figure = plt.figure(figsize=(5,5))
+            plt.subplot(1,2,1)
+            plt.axis('off')
+            plt.imshow(image)
+        j += 4
 
-rand = tf.random.normal((1,256),seed=123)
-preds = gen([style,test_dataset])
-figure = plt.figure(figsize=(15,15))
-for i in range(2):
-    plt.subplot(1,2,i+1)
-    plt.axis('off')
-    plt.imshow(preds[i]*0.5+0.5)
-plt.show()
+show_pairs(test_dataset)
+# %%
+gaugan.generator.save_weights('gen_weights.h5')
+gaugan.discriminator.save_weights('disc_weights.h5')
 # %%

@@ -6,11 +6,11 @@ from segmentation_pipeline import *
 from IPython.display import clear_output
 from losses import * 
 from model import * 
-
+from deeplabv3 import *
 perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
-batch_size = 4
-buffer_size = 100
-img_size = 256
+batch_size = 2
+buffer_size = 200
+img_size =256
 num_classes= 7
 dataset_path = perso_path + 'segmentation_waifus/images/'
 
@@ -48,8 +48,9 @@ def define_dataset(dataset_path, batch_size, buffer_size):
     test_batches = (
         test_images
         .batch(batch_size)
+        .map(Augment())
         .map(One_Hot())
-        .repeat(1))
+        .repeat(10))
     return train_batches, test_batches
 
 def display(display_list):
@@ -71,17 +72,26 @@ for images, masks ,true_masks in train_batches.take(3):
 """
 
 #%%
+"""
 arch = u_net_pretrained(num_classes,(img_size,img_size,3))
-u_net = UNET(arch)
-u_net.compile(
-    keras.optimizers.Adam(learning_rate=4e-4,beta_1=0.0),
+modele = UNET(arch)
+modele.compile(
+    keras.optimizers.Adam(learning_rate=4e-4,beta_1=0.99),
+    model_loss=DiceBCELoss)
+"""
+arch = DeeplabV3Plus(img_size,num_classes)
+arch.summary()
+modele = DeepLabV3(arch)
+modele.compile(
+    keras.optimizers.Adam(learning_rate=1e-3,beta_1=0.99),
     model_loss=DiceBCELoss)
 #%%
 class save_weights(keras.callbacks.Callback):
     def __init__(self,mod):
-        self.mod = mod.model
+        super(save_weights,self).__init__()
 
     def on_epoch_end(self,epoch,logs=None):
+        """
         couches = self.mod.layers
         n = len(couches)
         weights = []
@@ -90,7 +100,8 @@ class save_weights(keras.callbacks.Callback):
             weights.append(weight)
         weights = np.array(weights)
         np.save(perso_path + "segmentation_waifus/u_net.npy",weights)
-        #self.model.save_weights(perso_path + "segmentation_waifus/u_net.h5")
+        """
+        self.model.modele.save_weights(perso_path + "segmentation_waifus/deeplab.h5")
 
 class DisplayCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
@@ -105,13 +116,14 @@ def create_mask(pred_mask):
 def show_predictions(dataset=None, num=3):
     if dataset:
         for image, _, true_mask in dataset.take(num):
-            pred_mask = u_net.predict(image)
+            pred_mask = modele(image)
             display([image[0], true_mask[0], create_mask(pred_mask[0])])
     else:
         display([sample_image, sample_mask,
-                 create_mask(u_net.predict(sample_image[tf.newaxis, ...]))])
+                 create_mask(modele.predict(sample_image[tf.newaxis, ...]))])
 
 #%%
+modele.modele.load_weights('deeplab.h5')
 def train(arch):
     n_epochs = 20
     arch.fit(
@@ -120,7 +132,7 @@ def train(arch):
         validation_data=test_batches,
         callbacks=[DisplayCallback(),save_weights(arch)])
 
-train(u_net)
+train(modele)
 # %%
 from pathlib import Path
 from PIL import Image
@@ -158,44 +170,39 @@ def load_images(n,path,size):
 
 #%%
 test_dataset = tf.keras.utils.image_dataset_from_directory(
-  "D:/Datasets/dataset_140000_512",
+  "../../anime_face/",
   labels=None,
   image_size=(256, 256),
-  batch_size=4)
+  batch_size=4,
+  shuffle=True)
 
 n_pairs = 10
 #test_dataset = tf.data.Dataset.from_tensor_slices(dataset).batch(4)
-model = u_net.model
-
-##Charger les poids en tant qu'array numpy
-def load_weights(model,weights_path):
-    weights = np.load(weights_path,allow_pickle=True)
-    n = weights.shape[0]
-    for i in range(n):
-        model.layers[i+2].set_weights(weights[i])
-
+model = modele.modele
+model.load_weights('deeplab.h5')
+#%%
 def show_pairs(true_images):
     j = 0
     for true_image in true_images.take(10000):
         preds = model.predict(true_image)
         for i,image in enumerate(true_image):
             images = [image.numpy().astype('uint8'),create_mask(np.expand_dims(preds[i],axis=0)).numpy()]
-            #figure = plt.figure(figsize=(5,5))
-            #plt.subplot(1,2,1)
-            #plt.axis('off')
-            #plt.imshow(images[0])
-            #plt.subplot(1,2,2)
-            #plt.axis('off')
-            #plt.imshow(images[1])
+            """
+            figure = plt.figure(figsize=(5,5))
+            plt.subplot(1,2,1)
+            plt.axis('off')
+            plt.imshow(images[0])
+            plt.subplot(1,2,2)
+            plt.axis('off')
+            plt.imshow(images[1])
+            """
             im = Image.fromarray(images[0])
             im.save(perso_path+f"crash_test_gaugan/images/training/{i+j}.jpg")
             mask = Image.fromarray(images[1])
             mask.save(perso_path+f"crash_test_gaugan/annotations/training/{i+j}.png")
+            
         j += 4
         #plt.show()
-
-load_weights(model,perso_path + "segmentation_waifus/u_net.npy")
-#preds = model.predict(test_dataset)
 
 show_pairs(test_dataset)
 # %%

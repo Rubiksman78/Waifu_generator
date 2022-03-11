@@ -3,7 +3,7 @@ from tensorflow import keras
 from keras import layers,models
 import tensorflow_addons as tfa
 
-im_size = 64
+im_size = 512
 im_shape = (im_size,im_size,3)
 ###Modèle UNET: MobileNetV2 encodeur + Conv2D / Upsampling2D décodeur
 def mobile_net_block(input,filters,strides,kernel_size):
@@ -120,9 +120,9 @@ def u_net_pretrained(classes,img_shape):
 loss_tracker = keras.metrics.Mean(name="loss")
 acc_metric = keras.metrics.CategoricalAccuracy(name="accuracy")
 class UNET(keras.models.Model):
-    def __init__(self,model):
+    def __init__(self,u_net):
         super(UNET,self).__init__()
-        self.model = model
+        self.u_net = u_net
 
     def compile(self,opt,model_loss):
         super(UNET,self).compile()
@@ -136,10 +136,10 @@ class UNET(keras.models.Model):
             images.append(x)
         image,mask,_ = images
         with tf.GradientTape() as tape:
-            pred = self.model(image)
+            pred = self.u_net(image)
             loss = self.loss(mask,pred)
-            grad = tape.gradient(loss,self.model.trainable_variables)
-            self.opt.apply_gradients(zip(grad,self.model.trainable_variables))
+            grad = tape.gradient(loss,self.u_net.trainable_variables)
+            self.opt.apply_gradients(zip(grad,self.u_net.trainable_variables))
         loss_tracker.update_state(loss)
         acc_metric.update_state(mask,pred)
         return {'loss': loss_tracker.result(),'accuracy':acc_metric.result()}
@@ -149,7 +149,7 @@ class UNET(keras.models.Model):
         for x in data:
             images.append(x)
         image,mask,_ = images
-        pred = self.model(image)
+        pred = self.u_net(image)
         loss = self.loss(mask,pred)
         loss_tracker.update_state(loss)
         acc_metric.update_state(mask,pred)
@@ -160,4 +160,4 @@ class UNET(keras.models.Model):
         return [loss_tracker, acc_metric]
 
     def call(self,inputs):
-        return self.model(inputs)
+        return self.u_net(inputs)
