@@ -1,14 +1,10 @@
 #%%
 import tensorflow as tf
 from tensorflow import keras
-import numpy as np
 import matplotlib.pyplot as plt
-import cv2
 from glob import glob
-from PIL import Image
 from segmentation_pipeline_bis import * 
 from gaugan_class import *
-from pathlib import Path
 #%%
 ###Load dataset###
 perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo

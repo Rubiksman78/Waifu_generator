@@ -1,4 +1,3 @@
-from sklearn.neighbors import KNeighborsTransformer
 import tensorflow as tf
 from tensorflow import keras
 from keras import layers,models
@@ -19,12 +18,14 @@ def convolution_block(
         num_filters,
         kernel_size=kernel_size,
         dilation_rate=dilation_rate,
-        padding='same',
+        padding=padding,
         use_bias=use_bias,
         kernel_initializer=keras.initializers.HeNormal(),
+        kernel_regularizer=keras.regularizers.L2()
     )(block_input)
     x = tfa.layers.InstanceNormalization()(x)
     x = layers.LeakyReLU(alpha=0.2)(x)
+    x = layers.SpatialDropout2D(0.8)(x)
     return x
 
 def DilatedSpatialPyramidPooling(dspp_input):
@@ -70,7 +71,7 @@ def DeeplabV3Plus(image_size,num_classes):
     return models.Model(model_input,model_output)
 
 
-###Classe UNET pour entraîner tout ça
+###Classe DeepLabV3 pour entraîner tout ça
 loss_tracker = keras.metrics.Mean(name="loss")
 acc_metric = keras.metrics.CategoricalAccuracy(name="accuracy")
 

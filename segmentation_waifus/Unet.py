@@ -7,10 +7,11 @@ from IPython.display import clear_output
 from losses import * 
 from model import * 
 from deeplabv3 import *
+
 perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
-batch_size = 2
-buffer_size = 200
-img_size =256
+batch_size = 1
+buffer_size = 50
+img_size =512
 num_classes= 7
 dataset_path = perso_path + 'segmentation_waifus/images/'
 
@@ -42,7 +43,7 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         .batch(batch_size)
         .map(Augment())
         .map(One_Hot())
-        .repeat(20)
+        .repeat(20) #A modifier si vous voulez plus de data augment
         .prefetch(buffer_size=tf.data.AUTOTUNE))
 
     test_batches = (
@@ -64,12 +65,10 @@ def display(display_list):
     plt.show()
 
 train_batches,test_batches = define_dataset(dataset_path,batch_size,buffer_size)
-
-"""
+#%%
 for images, masks ,true_masks in train_batches.take(3):
     sample_image,sample_mask = images[0],inv_mask(masks[0])
     display([sample_image,sample_mask])
-"""
 
 #%%
 """
@@ -80,28 +79,17 @@ modele.compile(
     model_loss=DiceBCELoss)
 """
 arch = DeeplabV3Plus(img_size,num_classes)
-arch.summary()
 modele = DeepLabV3(arch)
 modele.compile(
     keras.optimizers.Adam(learning_rate=1e-3,beta_1=0.99),
-    model_loss=DiceBCELoss)
+    model_loss=DiceBCELoss) #Loss modifiable
 #%%
 class save_weights(keras.callbacks.Callback):
     def __init__(self,mod):
         super(save_weights,self).__init__()
 
     def on_epoch_end(self,epoch,logs=None):
-        """
-        couches = self.mod.layers
-        n = len(couches)
-        weights = []
-        for i in range(2,n):
-            weight = couches[i].get_weights()
-            weights.append(weight)
-        weights = np.array(weights)
-        np.save(perso_path + "segmentation_waifus/u_net.npy",weights)
-        """
-        self.model.modele.save_weights(perso_path + "segmentation_waifus/deeplab.h5")
+        self.model.modele.save_weights(perso_path + "segmentation_waifus/deeplab512.h5") #Mettre le nom que vous voulez aux poids
 
 class DisplayCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
@@ -123,7 +111,7 @@ def show_predictions(dataset=None, num=3):
                  create_mask(modele.predict(sample_image[tf.newaxis, ...]))])
 
 #%%
-modele.modele.load_weights('deeplab.h5')
+#modele.modele.load_weights('deeplab2.h5')
 def train(arch):
     n_epochs = 20
     arch.fit(
@@ -133,61 +121,24 @@ def train(arch):
         callbacks=[DisplayCallback(),save_weights(arch)])
 
 train(modele)
-# %%
-from pathlib import Path
-from PIL import Image
-import numpy as np
-import cv2
-from model import u_net_pretrained
-import matplotlib.pyplot as plt
-
-def usingPILandShrink(f,size): 
-    im = Image.open(f)  
-    im.draft('RGB',(size,size))
-    return np.asarray(im)
-
-def load_images(n,path,size):    
-    dataset = []
-    it = 0
-    for filename in Path(path).glob("*.jpg"):
-        if it <= n:
-            try:
-                im=usingPILandShrink(filename,size)
-                im = im.astype('uint8')
-                im = cv2.resize(im, dsize=(size,size), interpolation=cv2.INTER_CUBIC)
-                dataset.append(im)
-                it += 1
-            except:
-                continue
-            if it % 1000==0:
-                print(it)
-        else:
-            break
-    return dataset
-
-#test = load_images(10000,"D:/Datasets/dataset_140000_512",256)
-#np.save("dataset_test_seg.npy",test)
-
 #%%
 test_dataset = tf.keras.utils.image_dataset_from_directory(
-  "../../anime_face/",
+  "../../anime_face/", #Mettre le path du repo où il y a vos images de test
   labels=None,
   image_size=(256, 256),
   batch_size=4,
-  shuffle=True)
+  )
 
-n_pairs = 10
-#test_dataset = tf.data.Dataset.from_tensor_slices(dataset).batch(4)
 model = modele.modele
-model.load_weights('deeplab.h5')
+model.load_weights('deeplab.h5') #Mettre le nom des poids que vous avez save
 #%%
 def show_pairs(true_images):
     j = 0
-    for true_image in true_images.take(10000):
+    for true_image in true_images.take(10): #Mettre le nombre de batchs que vous voulez voir et save
         preds = model.predict(true_image)
         for i,image in enumerate(true_image):
             images = [image.numpy().astype('uint8'),create_mask(np.expand_dims(preds[i],axis=0)).numpy()]
-            """
+            
             figure = plt.figure(figsize=(5,5))
             plt.subplot(1,2,1)
             plt.axis('off')
@@ -195,12 +146,13 @@ def show_pairs(true_images):
             plt.subplot(1,2,2)
             plt.axis('off')
             plt.imshow(images[1])
-            """
-            im = Image.fromarray(images[0])
+            #Décommenter après si vous voulez save les images obtenues pour la suite
+            """ 
+            im = Image.fromarray(images[0]) 
             im.save(perso_path+f"crash_test_gaugan/images/training/{i+j}.jpg")
             mask = Image.fromarray(images[1])
             mask.save(perso_path+f"crash_test_gaugan/annotations/training/{i+j}.png")
-            
+            """
         j += 4
         #plt.show()
 

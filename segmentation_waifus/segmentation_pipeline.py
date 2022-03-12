@@ -1,8 +1,5 @@
 import tensorflow as tf
 import numpy as np
-import cv2
-import glob
-from tensorflow import keras
 from keras import layers
 
 hair = str([66, 64, 183])
@@ -87,12 +84,61 @@ class Augment(tf.keras.layers.Layer):
         self.augment_labels = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.1,fill_mode = "constant",seed=seed)])
         self.augment_true_labels = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.1,fill_mode = "constant",seed=seed)])    
     
+    def apply_random_brightness(self, image, mask,true_mask):
+        condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
+        image = tf.cond(
+            condition, lambda: tf.image.random_brightness(
+            image, 0.1),
+            lambda: tf.identity(image)
+        )
+        return image, mask,true_mask
+    
+    def apply_random_contrast(self, image, mask,true_mask):
+        condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
+        image = tf.cond(
+            condition, lambda: tf.image.random_contrast(
+                image,0.1,
+                0.2
+            ), lambda: tf.identity(image)
+        )
+        return image, mask,true_mask
+    
+    def apply_random_saturation(self, image, mask,true_mask):
+        condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
+        image = tf.cond(
+            condition, lambda: tf.image.random_saturation(
+            image, 1,
+                5
+            ), lambda: tf.identity(image)
+        )
+        return image, mask,true_mask
+
+    def apply_noise(self,image,mask,true_mask):
+        noise = tf.random.normal(shape=tf.shape(image),stddev=0.05)
+        image = tf.add(image,noise)
+        return image, mask,true_mask
+
+    def apply_hue(self,image,mask,true_mask):
+        condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
+        image = tf.cond(
+            condition, lambda: tf.image.random_hue(
+            image, 0.01
+            ), lambda: tf.identity(image)
+        )
+        return image, mask,true_mask
+
     def call(self, inputs, labels ,true_labels):
         inputs = self.augment_inputs(inputs)
         labels = self.augment_labels(labels)
         true_labels = self.augment_true_labels(true_labels)
+        inputs,labels,true_labels = self.apply_random_brightness(inputs,labels,true_labels)
+        inputs,labels,true_labels = self.apply_random_contrast(inputs,labels,true_labels)
+        inputs,labels,true_labels = self.apply_random_saturation(inputs,labels,true_labels)
+        inputs,labels,true_labels = self.apply_hue(inputs,labels,true_labels)
+        #inputs,labels,true_labels = self.apply_noise(inputs,labels,true_labels)
         return inputs, labels, true_labels
 
+    
 class One_Hot(tf.keras.layers.Layer):
     def __init__(self):
         super().__init__()
