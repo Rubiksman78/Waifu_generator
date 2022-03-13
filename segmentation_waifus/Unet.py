@@ -7,11 +7,15 @@ from IPython.display import clear_output
 from losses import * 
 from model import * 
 from deeplabv3 import *
+import glob
+from PIL import Image
+from sklearn.model_selection import KFold
+import tensorflow_datasets as tfds
 
 perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
-batch_size = 1
-buffer_size = 50
-img_size =512
+batch_size = 2
+buffer_size = 100
+img_size = 256
 num_classes= 7
 dataset_path = perso_path + 'segmentation_waifus/images/'
 
@@ -43,7 +47,7 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         .batch(batch_size)
         .map(Augment())
         .map(One_Hot())
-        .repeat(20) #A modifier si vous voulez plus de data augment
+        .repeat(25) #A modifier si vous voulez plus de data augment
         .prefetch(buffer_size=tf.data.AUTOTUNE))
 
     test_batches = (
@@ -51,7 +55,7 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         .batch(batch_size)
         .map(Augment())
         .map(One_Hot())
-        .repeat(10))
+        .repeat(1))
     return train_batches, test_batches
 
 def display(display_list):
@@ -71,25 +75,12 @@ for images, masks ,true_masks in train_batches.take(3):
     display([sample_image,sample_mask])
 
 #%%
-"""
-arch = u_net_pretrained(num_classes,(img_size,img_size,3))
-modele = UNET(arch)
-modele.compile(
-    keras.optimizers.Adam(learning_rate=4e-4,beta_1=0.99),
-    model_loss=DiceBCELoss)
-"""
-arch = DeeplabV3Plus(img_size,num_classes)
-modele = DeepLabV3(arch)
-modele.compile(
-    keras.optimizers.Adam(learning_rate=1e-3,beta_1=0.99),
-    model_loss=DiceBCELoss) #Loss modifiable
-#%%
 class save_weights(keras.callbacks.Callback):
-    def __init__(self,mod):
+    def __init__(self):
         super(save_weights,self).__init__()
 
     def on_epoch_end(self,epoch,logs=None):
-        self.model.modele.save_weights(perso_path + "segmentation_waifus/deeplab512.h5") #Mettre le nom que vous voulez aux poids
+        self.model.modele.save_weights(perso_path + "segmentation_waifus/deeplab512b.h5") #Mettre le nom que vous voulez aux poids
 
 class DisplayCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
@@ -111,30 +102,72 @@ def show_predictions(dataset=None, num=3):
                  create_mask(modele.predict(sample_image[tf.newaxis, ...]))])
 
 #%%
-#modele.modele.load_weights('deeplab2.h5')
+"""
+arch = u_net_pretrained(num_classes,(img_size,img_size,3))
+modele = UNET(arch)
+modele.compile(
+    keras.optimizers.Adam(learning_rate=4e-4,beta_1=0.99),
+    model_loss=DiceBCELoss)
+"""
+arch = DeeplabV3Plus(img_size,num_classes)
+modele = DeepLabV3(arch)
+modele.compile(
+    keras.optimizers.Adam(learning_rate=1e-3,beta_1=0.99),
+    model_loss=Dice_CE) #Loss modifiable
+
+#%%
+#modele.modele.load_weights('deeplab.h5')
 def train(arch):
     n_epochs = 20
     arch.fit(
         train_batches,
         epochs=n_epochs,
         validation_data=test_batches,
-        callbacks=[DisplayCallback(),save_weights(arch)])
+        callbacks=[DisplayCallback(),save_weights()])
 
 train(modele)
+#%%
+from sklearn.metrics import confusion_matrix
+
+true_masks = np.argmax(next(iter(test_batches.map(lambda x,y,z : y))),axis=-1).flatten()
+preds = modele.predict(test_batches.map(lambda x,y,z : (x,y,z)))
+true_preds = np.argmax(preds,axis=-1).flatten()
+cm = confusion_matrix(true_preds,true_masks)
+class_names = ['hair','eyes','clothes','face','skin','background','mouth']
+
+def show_confusion_matrix(matrix, labels):
+    fig, ax = plt.subplots(figsize=(10,10))
+    im = ax.imshow(matrix)
+    N = len(labels)
+    ax.set_xticks(np.arange(N))
+    ax.set_yticks(np.arange(N))
+    ax.set_xticklabels(labels)
+    ax.set_yticklabels(labels)
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+             rotation_mode="anchor")
+    for i in range(N):
+        for j in range(N):
+            text = ax.text(j, i,matrix[i, j],
+                           ha="center", va="center", color="w")
+    ax.set_title("Matrice de confusion")
+    fig.tight_layout()
+    plt.show()
+    
+show_confusion_matrix(cm, class_names)
 #%%
 test_dataset = tf.keras.utils.image_dataset_from_directory(
   "../../anime_face/", #Mettre le path du repo où il y a vos images de test
   labels=None,
-  image_size=(256, 256),
-  batch_size=4,
+  image_size=(512, 512),
+  batch_size=2,
   )
 
 model = modele.modele
-model.load_weights('deeplab.h5') #Mettre le nom des poids que vous avez save
+model.load_weights('deeplab512.h5') #Mettre le nom des poids que vous avez save
 #%%
 def show_pairs(true_images):
     j = 0
-    for true_image in true_images.take(10): #Mettre le nombre de batchs que vous voulez voir et save
+    for true_image in true_images.take(1): #Mettre le nombre de batchs que vous voulez voir et save
         preds = model.predict(true_image)
         for i,image in enumerate(true_image):
             images = [image.numpy().astype('uint8'),create_mask(np.expand_dims(preds[i],axis=0)).numpy()]

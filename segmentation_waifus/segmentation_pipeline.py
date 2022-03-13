@@ -88,7 +88,7 @@ class Augment(tf.keras.layers.Layer):
         condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
         image = tf.cond(
             condition, lambda: tf.image.random_brightness(
-            image, 0.1),
+            image, 0.2),
             lambda: tf.identity(image)
         )
         return image, mask,true_mask
@@ -97,8 +97,8 @@ class Augment(tf.keras.layers.Layer):
         condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
         image = tf.cond(
             condition, lambda: tf.image.random_contrast(
-                image,0.1,
-                0.2
+                image,0.5,
+                2
             ), lambda: tf.identity(image)
         )
         return image, mask,true_mask
@@ -107,8 +107,8 @@ class Augment(tf.keras.layers.Layer):
         condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
         image = tf.cond(
             condition, lambda: tf.image.random_saturation(
-            image, 1,
-                5
+            image, 0.75,
+                1.25
             ), lambda: tf.identity(image)
         )
         return image, mask,true_mask
@@ -122,7 +122,7 @@ class Augment(tf.keras.layers.Layer):
         condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
         image = tf.cond(
             condition, lambda: tf.image.random_hue(
-            image, 0.01
+            image, 0.1
             ), lambda: tf.identity(image)
         )
         return image, mask,true_mask
@@ -146,11 +146,3 @@ class One_Hot(tf.keras.layers.Layer):
     def call(self, inputs, labels ,true_labels):
         res = normalize_maskbis(labels)
         return inputs, res, true_labels
-
-class One_Hot_bis(tf.keras.layers.Layer):
-    def __init__(self):
-        super().__init__()
-    
-    def call(self, inputs, labels ,true_labels):
-        res = normalize_maskbis(labels)
-        return inputs, true_labels, res

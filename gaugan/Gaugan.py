@@ -10,10 +10,10 @@ from gaugan_class import *
 perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
 dataset_path = perso_path + 'crash_test_gaugan/images/'
 
-BATCH_SIZE =16
-IMG_HEIGHT = IMG_WIDTH = 64
+BATCH_SIZE = 16
+IMG_HEIGHT = IMG_WIDTH = 256
 NUM_CLASSES = 7
-buffer_size = 50
+buffer_size = 1
 
 def define_dataset(dataset_path, batch_size, buffer_size):
     training_data = "training/"
@@ -121,8 +121,8 @@ class GanMonitor(keras.callbacks.Callback):
 # %%
 gaugan = GauGAN(IMG_HEIGHT,NUM_CLASSES,BATCH_SIZE,latent_dim=256)
 gaugan.compile()
-gaugan.generator.load_weights('gen_weights1.h5')
-gaugan.discriminator.load_weights('disc_weights1.h5')
+#gaugan.generator.load_weights('gen_weights.h5')
+#gaugan.discriminator.load_weights('disc_weights.h5')
 #%%
 gaugan.fit(train_batches,epochs=100,callbacks=[GanMonitor(train_batches,1),save_weights()])
 # %%
@@ -133,22 +133,21 @@ test_dataset = tf.keras.utils.image_dataset_from_directory(
   image_size=(64, 64),
   batch_size=4).map(normalize_maskbis)
 
-
-n_pairs = 10
 gen = gaugan.generator
 
 def show_pairs(true_images):
-    j = 0
     style = tf.random.normal((4,256))
-    for true_image in true_images.take(3):
+    for true_image in true_images.take(1):
         preds = gen([style,true_image])
-        for image in preds:
-            image = (image*0.5+0.5).numpy()
-            figure = plt.figure(figsize=(5,5))
-            plt.subplot(1,2,1)
-            plt.axis('off')
-            plt.imshow(image)
-        j += 4
+        for i,image in enumerate(preds):
+            f, ax = plt.subplots(1, 2, figsize=(10,10))
+            ax[0].imshow(inv_mask(true_image[i]))
+            ax[0].axis("off")
+            ax[0].set_title("Mask", fontsize=20)
+            ax[1].imshow(image*0.5+0.5)
+            ax[1].axis("off")
+            ax[1].set_title("Prediction", fontsize=20)
+    plt.show()
 
 show_pairs(test_dataset)
 # %%

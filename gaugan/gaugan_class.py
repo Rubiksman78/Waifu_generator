@@ -97,7 +97,7 @@ class GauGAN(keras.models.Model):
 
     def train_generator(self,latent_vector,segmentation_map,labels,image,mean,variance):
         self.discriminator.trainable = False
-        with tf.GradientTape()as gen_tape,tf.GradientTape() as enc_tape:
+        with tf.GradientTape()as gen_tape:
             real_output = self.discriminator([segmentation_map,image],training=False)
             fake_output,fake_image = self.combined_model([latent_vector,labels,segmentation_map])
             pred = fake_output[-1]
@@ -106,8 +106,9 @@ class GauGAN(keras.models.Model):
             vgg_loss = self.vgg_feature_loss_coeff * self.vgg_loss(image,fake_image)
             feature_loss = self.feature_loss_coeff * self.feature_matching_loss(real_output,fake_output)
             total_loss = g_loss + kl_loss + vgg_loss + feature_loss
-        gradients = gen_tape.gradient(total_loss,self.generator.trainable_variables)
-        self.generator_optimizer.apply_gradients(zip(gradients,self.generator.trainable_variables))
+        all_trainable_variables = (self.combined_model.trainable_variables + self.encoder.trainable_variables)
+        gradients = gen_tape.gradient(total_loss,all_trainable_variables)
+        self.generator_optimizer.apply_gradients(zip(gradients,all_trainable_variables))
         return total_loss,feature_loss,vgg_loss,kl_loss
 
     def train_step(self,data):
