@@ -15,9 +15,11 @@ Ensuite l'objectif est de générer des personnages réalistes à partir de masq
 
 ## Segmentation de waifus
 
-Segementation avec U-NET. 
+Segementation avec U-NET -> DeepLabV3Plus
 
 Tuto U-net : https://keras.io/examples/vision/oxford_pets_image_segmentation/
+
+Tuto DeepLabV3plus: https://keras.io/examples/vision/deeplabv3_plus/
 
 Tuto transfer learning mobilenetv2 : https://www.tensorflow.org/tutorials/images/segmentation
 
