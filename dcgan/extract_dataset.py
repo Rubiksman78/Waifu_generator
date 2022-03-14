@@ -47,5 +47,3 @@ def plot(X,n):
         plt.imshow(X[i+25]*0.5+0.5)
     plt.show()
 plot(dataset,5)
-
-# %%
