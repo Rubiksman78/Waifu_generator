@@ -75,20 +75,22 @@ def load_image(datapoint,im_size=512):
     true_mask = tf.image.resize(datapoint['true_mask'],(im_size,im_size))
     input_image = normalize(input_image)
     return input_image,input_mask,true_mask
+
+### Grosse Data augment ###
 class Augment(tf.keras.layers.Layer):
     #Data Augment : rotation + flip 
     def __init__(self, seed=42):
         super().__init__()
         # both use the same seed, so they'll make the same random changes.
-        self.augment_inputs = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.1,fill_mode = "constant",seed=seed)])
-        self.augment_labels = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.1,fill_mode = "constant",seed=seed)])
-        self.augment_true_labels = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.1,fill_mode = "constant",seed=seed)])    
+        self.augment_inputs = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.25,fill_mode = "constant",seed=seed)])
+        self.augment_labels = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.25,fill_mode = "constant",seed=seed)])
+        self.augment_true_labels = tf.keras.Sequential([layers.RandomFlip(mode="horizontal", seed=seed),layers.RandomRotation(0.25,fill_mode = "constant",seed=seed)])    
     
     def apply_random_brightness(self, image, mask,true_mask):
         condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
         image = tf.cond(
             condition, lambda: tf.image.random_brightness(
-            image, 0.2),
+            image,0.4),
             lambda: tf.identity(image)
         )
         return image, mask,true_mask
@@ -97,8 +99,8 @@ class Augment(tf.keras.layers.Layer):
         condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
         image = tf.cond(
             condition, lambda: tf.image.random_contrast(
-                image,0.5,
-                2
+                image,0.75,
+                1.5
             ), lambda: tf.identity(image)
         )
         return image, mask,true_mask
@@ -114,8 +116,12 @@ class Augment(tf.keras.layers.Layer):
         return image, mask,true_mask
 
     def apply_noise(self,image,mask,true_mask):
-        noise = tf.random.normal(shape=tf.shape(image),stddev=0.05)
-        image = tf.add(image,noise)
+        condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
+        noise = tf.random.normal(shape=tf.shape(image),stddev=0.075)
+        image = tf.cond(
+            condition, lambda: tf.add(image,noise),
+            lambda: tf.identity(image)
+        )
         return image, mask,true_mask
 
     def apply_hue(self,image,mask,true_mask):
@@ -127,6 +133,49 @@ class Augment(tf.keras.layers.Layer):
         )
         return image, mask,true_mask
 
+    def apply_resize_crop(self,image,mask,true_mask):
+        NUM_BOXES = tf.shape(image)[0]
+        CROP_SIZE = (256,256)
+        condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
+        boxes = tf.random.uniform(shape=(NUM_BOXES, 4))
+        box_indices = tf.range(0, NUM_BOXES, dtype=tf.int32)
+        image = tf.cond(
+            condition, lambda: tf.image.crop_and_resize(image, boxes, box_indices, CROP_SIZE),
+            lambda: tf.identity(image)
+        )
+        mask =  tf.cond(
+            condition, lambda: tf.image.crop_and_resize(mask, boxes, box_indices, CROP_SIZE),
+            lambda: tf.identity(mask)
+        )
+        true_mask =  tf.cond(
+            condition, lambda: tf.image.crop_and_resize(true_mask, boxes, box_indices, CROP_SIZE),
+            lambda: tf.identity(true_mask)
+        )
+        return image,mask,true_mask
+
+    def crop_size(self,image,mask,true_mask):
+        size = np.random.randint(128,164)
+        batch_size = tf.shape(image)[0]
+        size = [batch_size,size,size,3]
+        condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
+        im_size = tf.shape(image)[1:3]
+        image = tf.cond(
+            condition, lambda: tf.image.random_crop(image,size,seed=42),
+            lambda: tf.identity(image)
+        )
+        mask =  tf.cond(
+            condition, lambda: tf.image.random_crop(mask,size,seed=42),
+            lambda: tf.identity(mask)
+        )
+        true_mask =  tf.cond(
+            condition, lambda: tf.image.random_crop(true_mask,size,seed=42),
+            lambda: tf.identity(true_mask)
+        )
+        image = tf.image.resize(image,size=im_size)
+        mask = tf.image.resize(mask,size=im_size)
+        true_mask = tf.image.resize(true_mask,size=im_size)
+        return image,mask,true_mask
+
     def call(self, inputs, labels ,true_labels):
         inputs = self.augment_inputs(inputs)
         labels = self.augment_labels(labels)
@@ -135,10 +184,11 @@ class Augment(tf.keras.layers.Layer):
         inputs,labels,true_labels = self.apply_random_contrast(inputs,labels,true_labels)
         inputs,labels,true_labels = self.apply_random_saturation(inputs,labels,true_labels)
         inputs,labels,true_labels = self.apply_hue(inputs,labels,true_labels)
-        #inputs,labels,true_labels = self.apply_noise(inputs,labels,true_labels)
+        inputs,labels,true_labels = self.apply_noise(inputs,labels,true_labels)
+        #inputs,labels,true_labels = self.apply_resize_crop(inputs,labels,true_labels)
+        inputs,labels,true_labels = self.crop_size(inputs,labels,true_labels)
         return inputs, labels, true_labels
 
-    
 class One_Hot(tf.keras.layers.Layer):
     def __init__(self):
         super().__init__()

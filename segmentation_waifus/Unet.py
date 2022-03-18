@@ -8,13 +8,10 @@ from losses import *
 from model import * 
 from deeplabv3 import *
 import glob
-from PIL import Image
-from sklearn.model_selection import KFold
-import tensorflow_datasets as tfds
-
+#%%
 perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
 batch_size = 2
-buffer_size = 100
+buffer_size = 500
 img_size = 256
 num_classes= 7
 dataset_path = perso_path + 'segmentation_waifus/images/'
@@ -47,13 +44,12 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         .batch(batch_size)
         .map(Augment())
         .map(One_Hot())
-        .repeat(25) #A modifier si vous voulez plus de data augment
+        .repeat(20) #A modifier si vous voulez plus de data augment
         .prefetch(buffer_size=tf.data.AUTOTUNE))
 
     test_batches = (
         test_images
         .batch(batch_size)
-        .map(Augment())
         .map(One_Hot())
         .repeat(1))
     return train_batches, test_batches
@@ -73,14 +69,13 @@ train_batches,test_batches = define_dataset(dataset_path,batch_size,buffer_size)
 for images, masks ,true_masks in train_batches.take(3):
     sample_image,sample_mask = images[0],inv_mask(masks[0])
     display([sample_image,sample_mask])
-
 #%%
 class save_weights(keras.callbacks.Callback):
     def __init__(self):
         super(save_weights,self).__init__()
 
     def on_epoch_end(self,epoch,logs=None):
-        self.model.modele.save_weights(perso_path + "segmentation_waifus/deeplab512b.h5") #Mettre le nom que vous voulez aux poids
+        self.model.modele.save_weights(perso_path + "segmentation_waifus/deeplab.h5") #Mettre le nom que vous voulez aux poids
 
 class DisplayCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
@@ -112,13 +107,13 @@ modele.compile(
 arch = DeeplabV3Plus(img_size,num_classes)
 modele = DeepLabV3(arch)
 modele.compile(
-    keras.optimizers.Adam(learning_rate=1e-3,beta_1=0.99),
+    keras.optimizers.Adam(learning_rate=1e-4),
     model_loss=Dice_CE) #Loss modifiable
 
 #%%
-#modele.modele.load_weights('deeplab.h5')
+modele.modele.load_weights('deeplab.h5')
 def train(arch):
-    n_epochs = 20
+    n_epochs = 30
     arch.fit(
         train_batches,
         epochs=n_epochs,
@@ -127,12 +122,15 @@ def train(arch):
 
 train(modele)
 #%%
+modele.modele.load_weights('deeplab.h5')
 from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 true_masks = np.argmax(next(iter(test_batches.map(lambda x,y,z : y))),axis=-1).flatten()
 preds = modele.predict(test_batches.map(lambda x,y,z : (x,y,z)))
 true_preds = np.argmax(preds,axis=-1).flatten()
-cm = confusion_matrix(true_preds,true_masks)
+cm = confusion_matrix(true_preds,true_masks,normalize='all')
+cmn = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 class_names = ['hair','eyes','clothes','face','skin','background','mouth']
 
 def show_confusion_matrix(matrix, labels):
@@ -153,12 +151,17 @@ def show_confusion_matrix(matrix, labels):
     fig.tight_layout()
     plt.show()
     
-show_confusion_matrix(cm, class_names)
+#show_confusion_matrix(cm, class_names)
+fig, ax = plt.subplots(figsize=(10,10))
+sns.heatmap(cmn, annot=True, fmt='.2f', xticklabels=class_names, yticklabels=class_names)
+plt.ylabel('Actual')
+plt.xlabel('Predicted')
+plt.show(block=False)
 #%%
 test_dataset = tf.keras.utils.image_dataset_from_directory(
-  "../../anime_face/", #Mettre le path du repo où il y a vos images de test
+  "../../Datasets/anime_face/", #Mettre le path du repo où il y a vos images de test
   labels=None,
-  image_size=(512, 512),
+  image_size=(256, 256),
   batch_size=2,
   )
 
