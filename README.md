@@ -50,26 +50,31 @@ constitué de 140 000 images en résolution 512*512.
 ![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/output.png)
 ## Génération de waifus HD conditionnée
 
-Utilisation de GauGAN basé sur la Spatial Adaptative Normalization (SPADE) 
+- Utilisation de GauGAN basé sur la Spatial Adaptative Normalization (SPADE) 
 pour générer des images à partir de masques de segmentation.
 Nous avons comme dans le papier ajouté aussi un encodeur pour inverser
 le GAN en même temps et pouvoir utiliser des images de référence afin
 de conditionner la génération des personnages.
+
 - Tuto architecture GauGAN : https://keras.io/examples/generative/gaugan/
 ![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/spade_layer.png)
 ![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/D-YnPm-WwAAvG_G.jpg)
-Fichiers python disponibles:
-- models.py : architecture des modèles utilisés (encodeur, générateur et
-discriminateur)
-- losses_gaugan.py : loss utilisées pour entraîner le modèle parmi lesquelles
-une loss pixel par pixel, la KL divergence, une loss de contenu, une loss
-de contenu avec des features extraites par VGG19 et la hinge loss pour le 
-discriminateur
-- gaugan_class.py : subclass model GauGAN assez complexe 
-- segmentation_pipeline_bis.py : réplique de la pipeline de segmentation
-adapté au format pour GauGAN
-- Gaugan.py : fichier principal pour entraîner le modèle et le tester
 
+-Fichiers python disponibles:
+    - models.py : architecture des modèles utilisés (encodeur, générateur et
+    discriminateur)
+    - losses_gaugan.py : loss utilisées pour entraîner le modèle parmi lesquelles
+    une loss pixel par pixel, la KL divergence, une loss de contenu, une loss
+    de contenu avec des features extraites par VGG19 et la hinge loss pour le 
+    discriminateur
+    - gaugan_class.py : subclass model GauGAN assez complexe 
+    - segmentation_pipeline_bis.py : réplique de la pipeline de segmentation
+    adapté au format pour GauGAN
+    - Gaugan.py : fichier principal pour entraîner le modèle et le tester
+
+- Objectif:
+
+![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/gaugan_steins.png)
 ## GUI de qualité
 
 *A faire*
@@ -79,3 +84,5 @@ adapté au format pour GauGAN
 - Coloriage d'une partie contourée (genre bouton remplissage de forme)
 - Prédiction du modèle sur le masque après tout ce traitement
 - Affichage de l'image générée à droite (éventuellement en direct si possible)
+
+![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/guisteins.jpg)
