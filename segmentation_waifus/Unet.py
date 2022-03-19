@@ -1,196 +1,163 @@
-#%%
 import tensorflow as tf
 from tensorflow import keras
-import matplotlib.pyplot as plt
-from segmentation_pipeline import * 
-from IPython.display import clear_output
-from losses import * 
-from model import * 
-from deeplabv3 import *
-import glob
-#%%
-perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
-batch_size = 2
-buffer_size = 500
-img_size = 256
-num_classes= 7
-dataset_path = perso_path + 'segmentation_waifus/images/'
+from keras import layers,models
+import tensorflow_addons as tfa
 
-def define_dataset(dataset_path, batch_size, buffer_size):
-    training_data = "training/"
-    val_data = "validation/"
-    TRAINSET_SIZE = len(glob.glob(dataset_path + training_data + "*.jpg"))
-    print(f"The Training Dataset contains {TRAINSET_SIZE} images.")
-    VALSET_SIZE = len(glob.glob(dataset_path + val_data + "*.jpg"))
-    print(f"The Validation Dataset contains {VALSET_SIZE} images.")
+im_size = 512
+im_shape = (im_size,im_size,3)
+###Modèle UNET: MobileNetV2 encodeur + Conv2D / Upsampling2D décodeur
+def mobile_net_block(input,filters,strides,kernel_size):
+    if strides == 1:
+        x = layers.Conv2D(filters,1,padding='same')(input)
+        x = tfa.layers.InstanceNormalization()(x)
+        x = layers.ReLU()(x)
+         
+        x = layers.DepthwiseConv2D(kernel_size,padding='same')(x)
+        x = tfa.layers.InstanceNormalization()(x)
+        x = layers.ReLU()(x)
 
-    train_dataset = tf.data.Dataset.list_files(
-        dataset_path + training_data + "*.jpg")
-    train_dataset = train_dataset.map(parse_image)
-
-    val_dataset = tf.data.Dataset.list_files(dataset_path + val_data + "*.jpg")
-    val_dataset = val_dataset.map(parse_image)
-    dataset = {"train": train_dataset, "val": val_dataset}
-
-    train_images = dataset['train'].map(
-        lambda x: load_image(x,im_size=img_size), num_parallel_calls=tf.data.AUTOTUNE)
-    test_images = dataset['val'].map(
-        lambda x: load_image(x,im_size=img_size), num_parallel_calls=tf.data.AUTOTUNE)
-
-    train_batches = (
-        train_images
-        .cache()
-        .shuffle(buffer_size)
-        .batch(batch_size)
-        .map(Augment())
-        .map(One_Hot())
-        .repeat(20) #A modifier si vous voulez plus de data augment
-        .prefetch(buffer_size=tf.data.AUTOTUNE))
-
-    test_batches = (
-        test_images
-        .batch(batch_size)
-        .map(One_Hot())
-        .repeat(1))
-    return train_batches, test_batches
-
-def display(display_list):
-    plt.figure(figsize=(15, 15))
-    title = ['Input Image', 'True Mask', 'Predicted Mask']
-    for i in range(len(display_list)):
-        plt.subplot(1, len(display_list), i+1)
-        plt.title(title[i])
-        plt.imshow(tf.keras.utils.array_to_img(display_list[i]))
-        plt.axis('off')
-    plt.show()
-
-train_batches,test_batches = define_dataset(dataset_path,batch_size,buffer_size)
-#%%
-for images, masks ,true_masks in train_batches.take(3):
-    sample_image,sample_mask = images[0],inv_mask(masks[0])
-    display([sample_image,sample_mask])
-#%%
-class save_weights(keras.callbacks.Callback):
-    def __init__(self):
-        super(save_weights,self).__init__()
-
-    def on_epoch_end(self,epoch,logs=None):
-        self.model.modele.save_weights(perso_path + "segmentation_waifus/deeplab.h5") #Mettre le nom que vous voulez aux poids
-
-class DisplayCallback(tf.keras.callbacks.Callback):
-    def on_epoch_end(self, epoch, logs=None):
-        clear_output(wait=False)
-        show_predictions(test_batches,num=1)
-        print ('\nSample Prediction after epoch {}\n'.format(epoch+1))
-
-def create_mask(pred_mask):
-    mask = inv_mask(pred_mask)
-    return mask
-
-def show_predictions(dataset=None, num=3):
-    if dataset:
-        for image, _, true_mask in dataset.take(num):
-            pred_mask = modele(image)
-            display([image[0], true_mask[0], create_mask(pred_mask[0])])
+        x = layers.Conv2D(filters,1,strides=1,padding='same')(x)
+        x = tfa.layers.InstanceNormalization()(x)
+        input2 = layers.Conv2D(filters,1,1,padding='same')(input)
+        x = layers.Add()([input2,x])
+        return x
     else:
-        display([sample_image, sample_mask,
-                 create_mask(modele.predict(sample_image[tf.newaxis, ...]))])
+        x = layers.Conv2D(filters,1,padding='same')(input)
+        x = tfa.layers.InstanceNormalization()(x)
+        x = layers.ReLU()(x)
+         
+        x = layers.DepthwiseConv2D(kernel_size,strides=strides,padding='same')(x)
+        x = tfa.layers.InstanceNormalization()(x)
+        x = layers.ReLU()(x)
 
-#%%
-"""
-arch = u_net_pretrained(num_classes,(img_size,img_size,3))
-modele = UNET(arch)
-modele.compile(
-    keras.optimizers.Adam(learning_rate=4e-4,beta_1=0.99),
-    model_loss=DiceBCELoss)
-"""
-arch = DeeplabV3Plus(img_size,num_classes)
-modele = DeepLabV3(arch)
-modele.compile(
-    keras.optimizers.Adam(learning_rate=1e-4),
-    model_loss=Dice_CE) #Loss modifiable
+        x = layers.Conv2D(filters,1,padding='same')(x)
+        x = tfa.layers.InstanceNormalization()(x)
+        return x
 
-#%%
-modele.modele.load_weights('deeplab.h5')
-def train(arch):
-    n_epochs = 30
-    arch.fit(
-        train_batches,
-        epochs=n_epochs,
-        validation_data=test_batches,
-        callbacks=[DisplayCallback(),save_weights()])
+def define_u_net(classes,img_shape):
+    init = 'he_normal'
+    input = models.Input(shape=img_shape)
+    x = layers.Conv2D(32,3,strides=1,padding='same',kernel_initializer=init)(input)
+    x = tfa.layers.InstanceNormalization()(x)
+    x = layers.LeakyReLU()(x)
+    res = []
+    for filters in [64,128,256,512]:
+        x = mobile_net_block(x,filters,1,3)
+        res.append(x)
+        #x = layers.Dropout(0.1)(x)
+        x = mobile_net_block(x,filters,2,3)
+        #x = layers.Dropout(0.1)(x)
 
-train(modele)
-#%%
-modele.modele.load_weights('deeplab.h5')
-from sklearn.metrics import confusion_matrix
-import seaborn as sns
+    filters_up = [1024,512,256,128]
+    for i in range(len(filters_up)):
+        x = layers.Conv2D(filters_up[i],3,padding='same',kernel_initializer=init)(x)
+        x = tfa.layers.InstanceNormalization()(x)
+        x = layers.LeakyReLU()(x)
+        #x = layers.Dropout(0.5)(x)
+        x = layers.Conv2D(filters_up[i],3,padding='same',kernel_initializer=init)(x)
+        x = tfa.layers.InstanceNormalization()(x)
+        x = layers.LeakyReLU()(x)
+        x = layers.UpSampling2D()(x)
+        x = layers.Dropout(0.5)(x)
+        to_add = res[len(res)-i-1]
+        to_add = layers.Conv2D(filters_up[i],1,padding='same',kernel_initializer=init)(to_add)
+        x = layers.add([to_add,x])
 
-true_masks = np.argmax(next(iter(test_batches.map(lambda x,y,z : y))),axis=-1).flatten()
-preds = modele.predict(test_batches.map(lambda x,y,z : (x,y,z)))
-true_preds = np.argmax(preds,axis=-1).flatten()
-cm = confusion_matrix(true_preds,true_masks,normalize='all')
-cmn = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-class_names = ['hair','eyes','clothes','face','skin','background','mouth']
+    x = layers.Conv2D(64,3,padding='same',kernel_initializer=init)(x)
+    x = tfa.layers.InstanceNormalization()(x)
+    x = layers.LeakyReLU()(x)
+    x = layers.SpatialDropout2D(0.5)(x)
+    x = layers.Conv2D(64,3,padding='same',kernel_initializer=init)(x)
+    x = tfa.layers.InstanceNormalization()(x)
+    x = layers.LeakyReLU()(x)
+    x = layers.SpatialDropout2D(0.5)(x)
+    x = layers.Conv2D(classes,1,activation='softmax')(x)
+    model = models.Model(input,x)
+    return model
 
-def show_confusion_matrix(matrix, labels):
-    fig, ax = plt.subplots(figsize=(10,10))
-    im = ax.imshow(matrix)
-    N = len(labels)
-    ax.set_xticks(np.arange(N))
-    ax.set_yticks(np.arange(N))
-    ax.set_xticklabels(labels)
-    ax.set_yticklabels(labels)
-    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
-             rotation_mode="anchor")
-    for i in range(N):
-        for j in range(N):
-            text = ax.text(j, i,matrix[i, j],
-                           ha="center", va="center", color="w")
-    ax.set_title("Matrice de confusion")
-    fig.tight_layout()
-    plt.show()
-    
-#show_confusion_matrix(cm, class_names)
-fig, ax = plt.subplots(figsize=(10,10))
-sns.heatmap(cmn, annot=True, fmt='.2f', xticklabels=class_names, yticklabels=class_names)
-plt.ylabel('Actual')
-plt.xlabel('Predicted')
-plt.show(block=False)
-#%%
-test_dataset = tf.keras.utils.image_dataset_from_directory(
-  "../../Datasets/anime_face/", #Mettre le path du repo où il y a vos images de test
-  labels=None,
-  image_size=(256, 256),
-  batch_size=2,
-  )
+#model = define_u_net(7,img_shape=(128,128,3))
 
-model = modele.modele
-model.load_weights('deeplab512.h5') #Mettre le nom des poids que vous avez save
-#%%
-def show_pairs(true_images):
-    j = 0
-    for true_image in true_images.take(1): #Mettre le nombre de batchs que vous voulez voir et save
-        preds = model.predict(true_image)
-        for i,image in enumerate(true_image):
-            images = [image.numpy().astype('uint8'),create_mask(np.expand_dims(preds[i],axis=0)).numpy()]
-            
-            figure = plt.figure(figsize=(5,5))
-            plt.subplot(1,2,1)
-            plt.axis('off')
-            plt.imshow(images[0])
-            plt.subplot(1,2,2)
-            plt.axis('off')
-            plt.imshow(images[1])
-            #Décommenter après si vous voulez save les images obtenues pour la suite
-            """ 
-            im = Image.fromarray(images[0]) 
-            im.save(perso_path+f"crash_test_gaugan/images/training/{i+j}.jpg")
-            mask = Image.fromarray(images[1])
-            mask.save(perso_path+f"crash_test_gaugan/annotations/training/{i+j}.png")
-            """
-        j += 4
-        #plt.show()
+###Modèle UNET : MobileNetV2 préentraîné imagenet + Même chose décodeur
+def u_net_pretrained(classes,img_shape):
+    base_model = tf.keras.applications.mobilenet_v2.MobileNetV2(input_shape=img_shape,include_top=False,weights='imagenet')
+    layer_names = [
+        'block_1_expand_relu',
+        'block_3_expand_relu',
+        'block_6_expand_relu',
+        'block_13_expand_relu',
+        'block_16_project',
+    ]
+    base_model_outputs = [base_model.get_layer(name).output for name in layer_names]
+    down = models.Model(inputs=base_model.input,outputs=base_model_outputs)
 
-show_pairs(test_dataset)
-# %%
+    input = models.Input(shape=img_shape)
+    #init = 'he_normal'
+    skips = down(input)
+    x = skips[-1]
+    skips = reversed(skips[:-1])
+
+    filters_up = [512,256,128,64]
+    i = 0
+    for skip in skips:
+        x = layers.UpSampling2D()(x)
+        x = layers.Conv2D(filters_up[i],3,padding='same')(x)
+        x = tfa.layers.InstanceNormalization()(x)
+        x = layers.LeakyReLU(alpha=0.2)(x)
+        x = layers.Dropout(0.5)(x)
+        to_add = layers.Conv2D(filters_up[i],1,padding='same')(skip)
+        x = layers.Concatenate()([to_add,x])
+        i += 1
+    x = layers.UpSampling2D()(x)
+    x = layers.Conv2D(classes,1,activation='softmax')(x)
+    model = models.Model(input,x)
+    return model
+
+#u_net = u_net_pretrained(7,im_shape)
+#print(len(u_net.layers))
+#u_net.summary()
+
+###Classe UNET pour entraîner tout ça
+loss_tracker = keras.metrics.Mean(name="loss")
+acc_metric = keras.metrics.CategoricalAccuracy(name="accuracy")
+class UNET(keras.models.Model):
+    def __init__(self,u_net):
+        super(UNET,self).__init__()
+        self.u_net = u_net
+
+    def compile(self,opt,model_loss):
+        super(UNET,self).compile()
+        self.opt = opt
+        self.loss = model_loss
+
+    @tf.function
+    def train_step(self,data):
+        images = []
+        for x in data:
+            images.append(x)
+        image,mask,_ = images
+        with tf.GradientTape() as tape:
+            pred = self.u_net(image)
+            loss = self.loss(mask,pred)
+            grad = tape.gradient(loss,self.u_net.trainable_variables)
+            self.opt.apply_gradients(zip(grad,self.u_net.trainable_variables))
+        loss_tracker.update_state(loss)
+        acc_metric.update_state(mask,pred)
+        return {'loss': loss_tracker.result(),'accuracy':acc_metric.result()}
+
+    def test_step(self,data):
+        images = []
+        for x in data:
+            images.append(x)
+        image,mask,_ = images
+        pred = self.u_net(image)
+        loss = self.loss(mask,pred)
+        loss_tracker.update_state(loss)
+        acc_metric.update_state(mask,pred)
+        return {'loss': loss_tracker.result(),'accuracy':acc_metric.result()}
+
+    @property
+    def metrics(self):
+        return [loss_tracker, acc_metric]
+
+    def call(self,inputs):
+        return self.u_net(inputs)

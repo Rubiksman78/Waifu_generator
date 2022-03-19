@@ -9,35 +9,64 @@ Ensuite l'objectif est de générer des personnages réalistes à partir de masq
 ## DCGAN
 
 - DCGAN pour générer des waifus en 64 sur 64 et autres tests infructueux (PROGAN,ResNetGAN)
-- Utilitaire pour extraire un dataset d'un dossier d'images
+- baseline.py : Notebook à compléter pour la première phase du projet
 - Résultats obtenus :
 ![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/generated_images_e064.png?raw=true)
 
 ## Segmentation de waifus
 
-Segementation avec U-NET -> DeepLabV3Plus
+GauGAN nécessite un dataset de paires (masques de segmentation|images réelles)
+pour être entraîné. Or il n'existe pas de dataset public disponible donc
+nous avons labellisé quelques centaines d'images nous-même. Ceci étant
+encore insuffisant pour entraîner un GAN, nous avons entraîné un modèle de
+segmentation (Unet puis DeepLabV3Plus) pour générer des masques de segmentation
+pour le dataset https://www.kaggle.com/datasets/lukexng/animefaces-512x512 
+constitué de 140 000 images en résolution 512*512. 
 
-Tuto U-net : https://keras.io/examples/vision/oxford_pets_image_segmentation/
+Tutoriels utiles:
+- U-net : https://keras.io/examples/vision/oxford_pets_image_segmentation/
+- DeepLabV3plus: https://keras.io/examples/vision/deeplabv3_plus/
+- Transfer learning mobilenetv2 : https://www.tensorflow.org/tutorials/images/segmentation
 
-Tuto DeepLabV3plus: https://keras.io/examples/vision/deeplabv3_plus/
+Fichiers python disponibles:
+- deeplabv3.py : modèle DeepLabV3plus basé sur des convolutions à trous
+et du Spatial Pyramidal Pooling avec comme backbone MobileNetV2 +
+subclass model keras
+- unet.py : modèle U-Net avec comme backbone pour l'encodeur MobileNetV2
++ subclass model
+- losses.py : loss à utiliser parmi lesquelles Dice, Dice_BCE, Dice_CE_focal
+- segmentation_pipeline.py: utilitaire pour créer le dataset de segmentation
+sous la forme image + masque one-hot encoded + masque RGB
+- main_seg.py : fichier principal pour entraîner le modèle choisi et le tester
 
-Tuto transfer learning mobilenetv2 : https://www.tensorflow.org/tutorials/images/segmentation
-
-Améliorations : DICE loss, autres architecturess (Deeplab, convolutions atrous)
-- Labels et leur couleur RGB associée
-- Waifus et leurs masques de segmentation en couleur 
-- Utilitaire pour créer un dataset avec image réelle + masque de segmentation + masque one - hot
-- Diverses autres fonctions (loss,model,test_seg)
 - Comment sauvegarder les images annotées:
     - Mettre les images d'origine dans "segmentation_waifus/images/training/"
     - Mettre les masques de segmentation dans "segmentation-waifus/annotations/training/"
    
 ## Génération de waifus HD conditionnée
 
-- GauGAN
-- Tuto architecture de base : https://keras.io/examples/generative/gaugan/
+Utilisation de GauGAN basé sur la Spatial Adaptative Normalization (SPADE) 
+pour générer des images à partir de masques de segmentation.
+Nous avons comme dans le papier ajouté aussi un encodeur pour inverser
+le GAN en même temps et pouvoir utiliser des images de référence afin
+de conditionner la génération des personnages.
+- Tuto architecture GauGAN : https://keras.io/examples/generative/gaugan/
+
+Fichiers python disponibles:
+- models.py : architecture des modèles utilisés (encodeur, générateur et
+discriminateur)
+- losses_gaugan.py : loss utilisées pour entraîner le modèle parmi lesquelles
+une loss pixel par pixel, la KL divergence, une loss de contenu, une loss
+de contenu avec des features extraites par VGG19 et la hinge loss pour le 
+discriminateur
+- gaugan_class.py : subclass model GauGAN assez complexe 
+- segmentation_pipeline_bis.py : réplique de la pipeline de segmentation
+adapté au format pour GauGAN
+- Gaugan.py : fichier principal pour entraîner le modèle et le tester
+
 ## GUI de qualité
 
+*A faire*
 - Programme pour dessiner sur une image avec des couleurs spécifiques (celles de la segmentation)
 - Importer un masque de segmentation déjà fait à modifier avec le programme précédent
 - (Choix de couleurs pour une partie)
