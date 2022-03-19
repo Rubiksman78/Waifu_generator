@@ -15,7 +15,7 @@ Ensuite l'objectif est de générer des personnages réalistes à partir de masq
 
 ## Segmentation de waifus
 
-GauGAN nécessite un dataset de paires (masques de segmentation|images réelles)
+- GauGAN nécessite un dataset de paires (masques de segmentation|images réelles)
 pour être entraîné. Or il n'existe pas de dataset public disponible donc
 nous avons labellisé quelques centaines d'images nous-même. Ceci étant
 encore insuffisant pour entraîner un GAN, nous avons entraîné un modèle de
@@ -23,29 +23,30 @@ segmentation (Unet puis DeepLabV3Plus) pour générer des masques de segmentatio
 pour le dataset https://www.kaggle.com/datasets/lukexng/animefaces-512x512 
 constitué de 140 000 images en résolution 512*512. 
 
-Tutoriels utiles:
-- U-net : https://keras.io/examples/vision/oxford_pets_image_segmentation/
-- Transfer learning mobilenetv2 : https://www.tensorflow.org/tutorials/images/segmentation
-![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/u-net-architecture-1024x682.png)
-- DeepLabV3plus: https://keras.io/examples/vision/deeplabv3_plus/
-![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/1%202mYfKnsX1IqCCSItxpXSGA.png)
+- Tutoriels utiles:
+    - U-net : https://keras.io/examples/vision/oxford_pets_image_segmentation/
+    - Transfer learning mobilenetv2 : https://www.tensorflow.org/tutorials/images/segmentation
+    ![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/u-net-architecture-1024x682.png)
+    - DeepLabV3plus: https://keras.io/examples/vision/deeplabv3_plus/
+    ![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/1%202mYfKnsX1IqCCSItxpXSGA.png)
 
-Fichiers python disponibles:
-- deeplabv3.py : modèle DeepLabV3plus basé sur des convolutions à trous
-et du Spatial Pyramidal Pooling avec comme backbone MobileNetV2 +
-subclass model keras
-- unet.py : modèle U-Net avec comme backbone pour l'encodeur MobileNetV2
-+ subclass model
-- losses.py : loss à utiliser parmi lesquelles Dice, Dice_BCE, Dice_CE_focal
-- segmentation_pipeline.py: utilitaire pour créer le dataset de segmentation
-sous la forme image + masque one-hot encoded + masque RGB
-- main_seg.py : fichier principal pour entraîner le modèle choisi et le tester
+- Fichiers python disponibles:
+    - deeplabv3.py : modèle DeepLabV3plus basé sur des convolutions à trous
+    et du Spatial Pyramidal Pooling avec comme backbone MobileNetV2 +
+    subclass model keras
+    - unet.py : modèle U-Net avec comme backbone pour l'encodeur MobileNetV2
+    + subclass model
+    - losses.py : loss à utiliser parmi lesquelles Dice, Dice_BCE, Dice_CE_focal
+    - segmentation_pipeline.py: utilitaire pour créer le dataset de segmentation
+    sous la forme image + masque one-hot encoded + masque RGB
+    - main_seg.py : fichier principal pour entraîner le modèle choisi et le tester
 
-Comment sauvegarder les images annotées:
+- Comment sauvegarder les images annotées:
     - Mettre les images d'origine dans "segmentation_waifus/images/training/"
     - Mettre les masques de segmentation dans "segmentation-waifus/annotations/training/"
 
-Masques obtenus: 
+- Masques obtenus: 
+
 ![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/output.png)
 ## Génération de waifus HD conditionnée
 
