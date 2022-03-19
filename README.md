@@ -41,10 +41,12 @@ subclass model keras
 sous la forme image + masque one-hot encoded + masque RGB
 - main_seg.py : fichier principal pour entraîner le modèle choisi et le tester
 
-- Comment sauvegarder les images annotées:
+Comment sauvegarder les images annotées:
     - Mettre les images d'origine dans "segmentation_waifus/images/training/"
     - Mettre les masques de segmentation dans "segmentation-waifus/annotations/training/"
-   
+
+Masques obtenus: 
+![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/output.png)
 ## Génération de waifus HD conditionnée
 
 Utilisation de GauGAN basé sur la Spatial Adaptative Normalization (SPADE) 

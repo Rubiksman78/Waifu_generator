@@ -43,7 +43,7 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         .batch(batch_size)
         .map(Augment())
         .map(One_Hot())
-        .repeat(20) #A modifier si vous voulez plus de data augment
+        .repeat(1) #A modifier si vous voulez plus de data augment
         .prefetch(buffer_size=tf.data.AUTOTUNE))
 
     test_batches = (
@@ -165,7 +165,7 @@ test_dataset = tf.keras.utils.image_dataset_from_directory(
   )
 
 model = modele.modele
-model.load_weights('deeplab512.h5') #Mettre le nom des poids que vous avez save
+model.load_weights('deeplab.h5') #Mettre le nom des poids que vous avez save
 #%%
 def show_pairs(true_images):
     j = 0
