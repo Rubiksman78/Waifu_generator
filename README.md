@@ -22,7 +22,8 @@ encore insuffisant pour entraîner un GAN, nous avons entraîné un modèle de
 segmentation (Unet puis DeepLabV3Plus) pour générer des masques de segmentation
 pour le dataset https://www.kaggle.com/datasets/lukexng/animefaces-512x512 
 constitué de 140 000 images en résolution 512*512. 
-
+![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/spade_layer.png)
+![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/D-YnPm-WwAAvG_G.jpg)
 Tutoriels utiles:
 - U-net : https://keras.io/examples/vision/oxford_pets_image_segmentation/
 - DeepLabV3plus: https://keras.io/examples/vision/deeplabv3_plus/
