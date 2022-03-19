@@ -26,7 +26,7 @@ constitué de 140 000 images en résolution 512*512.
 Tutoriels utiles:
 - U-net : https://keras.io/examples/vision/oxford_pets_image_segmentation/
 - Transfer learning mobilenetv2 : https://www.tensorflow.org/tutorials/images/segmentation
-![alt text]https://github.com/Rubiksman78/Waifu_generator/blob/main/images/u-net-architecture-1024x682.png()
+![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/u-net-architecture-1024x682.png)
 - DeepLabV3plus: https://keras.io/examples/vision/deeplabv3_plus/
 ![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/1%202mYfKnsX1IqCCSItxpXSGA.png)
 
