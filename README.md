@@ -22,12 +22,13 @@ encore insuffisant pour entraîner un GAN, nous avons entraîné un modèle de
 segmentation (Unet puis DeepLabV3Plus) pour générer des masques de segmentation
 pour le dataset https://www.kaggle.com/datasets/lukexng/animefaces-512x512 
 constitué de 140 000 images en résolution 512*512. 
-![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/spade_layer.png)
-![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/D-YnPm-WwAAvG_G.jpg)
+
 Tutoriels utiles:
 - U-net : https://keras.io/examples/vision/oxford_pets_image_segmentation/
-- DeepLabV3plus: https://keras.io/examples/vision/deeplabv3_plus/
 - Transfer learning mobilenetv2 : https://www.tensorflow.org/tutorials/images/segmentation
+![alt text]https://github.com/Rubiksman78/Waifu_generator/blob/main/images/u-net-architecture-1024x682.png()
+- DeepLabV3plus: https://keras.io/examples/vision/deeplabv3_plus/
+![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/1%202mYfKnsX1IqCCSItxpXSGA.png)
 
 Fichiers python disponibles:
 - deeplabv3.py : modèle DeepLabV3plus basé sur des convolutions à trous
@@ -52,7 +53,8 @@ Nous avons comme dans le papier ajouté aussi un encodeur pour inverser
 le GAN en même temps et pouvoir utiliser des images de référence afin
 de conditionner la génération des personnages.
 - Tuto architecture GauGAN : https://keras.io/examples/generative/gaugan/
-
+![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/spade_layer.png)
+![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/D-YnPm-WwAAvG_G.jpg)
 Fichiers python disponibles:
 - models.py : architecture des modèles utilisés (encodeur, générateur et
 discriminateur)
