@@ -1,8 +1,5 @@
 perso_path.py
 __pycache__
-u_net.npy
 u_net.h5
-u_net512.h5
 deeplab.h5
-deeplab512b.h5
-deeplab512.h5
+eff.h5

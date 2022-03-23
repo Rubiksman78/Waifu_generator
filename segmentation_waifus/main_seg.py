@@ -43,7 +43,7 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         .batch(batch_size)
         .map(Augment())
         .map(One_Hot())
-        .repeat(1) #A modifier si vous voulez plus de data augment
+        .repeat(15) #A modifier si vous voulez plus de data augment
         .prefetch(buffer_size=tf.data.AUTOTUNE))
 
     test_batches = (
@@ -107,7 +107,7 @@ arch = DeeplabV3Plus(img_size,num_classes)
 modele = DeepLabV3(arch)
 modele.compile(
     keras.optimizers.Adam(learning_rate=1e-4),
-    model_loss=Dice_CE) #Loss modifiable
+    model_loss=DiceBCELoss) #Loss modifiable
 
 #%%
 modele.modele.load_weights('deeplab.h5')

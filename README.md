@@ -60,7 +60,7 @@ de conditionner la génération des personnages.
 ![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/spade_layer.png)
 ![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/D-YnPm-WwAAvG_G.jpg)
 
--Fichiers python disponibles:
+- Fichiers python disponibles:
     - models.py : architecture des modèles utilisés (encodeur, générateur et
     discriminateur)
     - losses_gaugan.py : loss utilisées pour entraîner le modèle parmi lesquelles
@@ -86,3 +86,7 @@ de conditionner la génération des personnages.
 - Affichage de l'image générée à droite (éventuellement en direct si possible)
 
 ![alt text](https://github.com/Rubiksman78/Waifu_generator/blob/main/images/guisteins.jpg)
+
+## Papiers
+
+Ensemble d'articles de recherche utilisés pour ce projet.
