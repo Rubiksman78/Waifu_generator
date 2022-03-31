@@ -8,9 +8,9 @@ from losses import *
 from deeplabv3 import *
 import glob
 #%%
-perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
+perso_path = 'C:/SAMUEL/CS/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
 batch_size = 2
-buffer_size = 500
+buffer_size = 100
 img_size = 256
 num_classes= 7
 dataset_path = perso_path + 'segmentation_waifus/images/'
@@ -43,7 +43,7 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         .batch(batch_size)
         .map(Augment())
         .map(One_Hot())
-        .repeat(15) #A modifier si vous voulez plus de data augment
+        .repeat(20) #A modifier si vous voulez plus de data augment
         .prefetch(buffer_size=tf.data.AUTOTUNE))
 
     test_batches = (
@@ -106,13 +106,13 @@ modele.compile(
 arch = DeeplabV3Plus(img_size,num_classes)
 modele = DeepLabV3(arch)
 modele.compile(
-    keras.optimizers.Adam(learning_rate=1e-4),
+    keras.optimizers.Adam(learning_rate=4e-4),
     model_loss=DiceBCELoss) #Loss modifiable
 
 #%%
 modele.modele.load_weights('deeplab.h5')
 def train(arch):
-    n_epochs = 30
+    n_epochs = 50
     arch.fit(
         train_batches,
         epochs=n_epochs,
@@ -161,7 +161,7 @@ test_dataset = tf.keras.utils.image_dataset_from_directory(
   "../../Datasets/anime_face/", #Mettre le path du repo où il y a vos images de test
   labels=None,
   image_size=(256, 256),
-  batch_size=2,
+  batch_size=4,
   )
 
 model = modele.modele
