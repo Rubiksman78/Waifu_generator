@@ -4,7 +4,9 @@ import tensorflow as tf
 from tensorflow import keras
 from keras import layers,models
 
-IMG_HEIGHT = IMG_WIDTH = 256
+IMG_HEIGHT = IMG_WIDTH = 64
+
+###Initialiser avec Glorot uniform comme dans le papier
 
 """Définition du généréteur de Gaugan avec l'utilisation de spade blocks"""
 def spade(segmentation_map,input,filters):
@@ -40,7 +42,7 @@ def define_generator(mask_shape,input_shape=(256,)):
     mask_input = models.Input(shape=mask_shape)
     x = layers.Dense(16384)(input)
     x = layers.Reshape((4,4,1024))(x)
-    for _ in range(int(IMG_HEIGHT/64)-1):
+    for _ in range(int(IMG_HEIGHT/64)-2):
         x = spade_block(mask_input,x,1024)
         x = layers.UpSampling2D()(x)
     
@@ -58,8 +60,8 @@ def define_generator(mask_shape,input_shape=(256,)):
     model = models.Model([input,mask_input],x)
     return model
 
-gen = define_generator((256,256,7))
-gen.summary()
+#gen = define_generator((256,256,7))
+#gen.summary()
 #%%
 """Définition du discriminateur de Gaugan type PatchGAN"""
 def define_discriminator(input_shape=(64,64,3)):
@@ -79,8 +81,8 @@ def define_discriminator(input_shape=(64,64,3)):
     model = models.Model([inputA,inputB],x)
     return model
 
-disc = define_discriminator(input_shape=(256,256,3))
-disc.summary()
+#disc = define_discriminator(input_shape=(256,256,3))
+#disc.summary()
 # %%
 """Définition de l'encodeur pour extraire le style d'une image objectif"""
 def define_encoder(input_shape=(64,64,3),latent_dim = 256):

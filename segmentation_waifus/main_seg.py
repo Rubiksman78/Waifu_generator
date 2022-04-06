@@ -7,10 +7,11 @@ from IPython.display import clear_output
 from losses import * 
 from deeplabv3 import *
 import glob
+from PIL import Image
 #%%
-perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
-batch_size = 2
-buffer_size = 500
+perso_path = 'C:/SAMUEL/CS/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
+batch_size = 4
+buffer_size = 100
 img_size = 256
 num_classes= 7
 dataset_path = perso_path + 'segmentation_waifus/images/'
@@ -43,14 +44,14 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         .batch(batch_size)
         .map(Augment())
         .map(One_Hot())
-        .repeat(15) #A modifier si vous voulez plus de data augment
+        .repeat(20) #A modifier si vous voulez plus de data augment
         .prefetch(buffer_size=tf.data.AUTOTUNE))
 
     test_batches = (
         test_images
         .batch(batch_size)
         .map(One_Hot())
-        .repeat(1))
+        )
     return train_batches, test_batches
 
 def display(display_list):
@@ -61,8 +62,9 @@ def display(display_list):
         plt.title(title[i])
         plt.imshow(tf.keras.utils.array_to_img(display_list[i]))
         plt.axis('off')
-    plt.show()
-
+    plt.savefig('images.png')
+    plt.close()
+    #plt.show()
 train_batches,test_batches = define_dataset(dataset_path,batch_size,buffer_size)
 #%%
 for images, masks ,true_masks in train_batches.take(3):
@@ -74,7 +76,7 @@ class save_weights(keras.callbacks.Callback):
         super(save_weights,self).__init__()
 
     def on_epoch_end(self,epoch,logs=None):
-        self.model.modele.save_weights(perso_path + "segmentation_waifus/deeplab.h5") #Mettre le nom que vous voulez aux poids
+        self.model.modele.save_weights(perso_path + "segmentation_waifus/deeplab2.h5") #Mettre le nom que vous voulez aux poids
 
 class DisplayCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
@@ -106,13 +108,13 @@ modele.compile(
 arch = DeeplabV3Plus(img_size,num_classes)
 modele = DeepLabV3(arch)
 modele.compile(
-    keras.optimizers.Adam(learning_rate=1e-4),
+    keras.optimizers.Adam(learning_rate=4e-4),
     model_loss=DiceBCELoss) #Loss modifiable
 
 #%%
-modele.modele.load_weights('deeplab.h5')
+modele.modele.load_weights('deeplab2.h5')
 def train(arch):
-    n_epochs = 30
+    n_epochs = 50
     arch.fit(
         train_batches,
         epochs=n_epochs,
@@ -121,7 +123,7 @@ def train(arch):
 
 train(modele)
 #%%
-modele.modele.load_weights('deeplab.h5')
+modele.modele.load_weights("deeplab2.h5")
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 
@@ -161,20 +163,22 @@ test_dataset = tf.keras.utils.image_dataset_from_directory(
   "../../Datasets/anime_face/", #Mettre le path du repo où il y a vos images de test
   labels=None,
   image_size=(256, 256),
-  batch_size=2,
+  batch_size=4,
+  shuffle=True
   )
 
 model = modele.modele
-model.load_weights('deeplab.h5') #Mettre le nom des poids que vous avez save
+model.load_weights('deeplab2.h5') #Mettre le nom des poids que vous avez save
 #%%
 def show_pairs(true_images):
     j = 0
-    for true_image in true_images.take(1): #Mettre le nombre de batchs que vous voulez voir et save
+    for true_image in true_images.take(100000): #Mettre le nombre de batchs que vous voulez voir et save
         preds = model.predict(true_image)
         for i,image in enumerate(true_image):
             images = [image.numpy().astype('uint8'),create_mask(np.expand_dims(preds[i],axis=0)).numpy()]
-            
+            """
             figure = plt.figure(figsize=(5,5))
+            
             plt.subplot(1,2,1)
             plt.axis('off')
             plt.imshow(images[0])
@@ -182,12 +186,12 @@ def show_pairs(true_images):
             plt.axis('off')
             plt.imshow(images[1])
             #Décommenter après si vous voulez save les images obtenues pour la suite
-            """ 
+            """
             im = Image.fromarray(images[0]) 
             im.save(perso_path+f"crash_test_gaugan/images/training/{i+j}.jpg")
             mask = Image.fromarray(images[1])
             mask.save(perso_path+f"crash_test_gaugan/annotations/training/{i+j}.png")
-            """
+            
         j += 4
         #plt.show()
 

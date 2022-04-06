@@ -75,10 +75,10 @@ class GauGAN(keras.models.Model):
         )
         return patch_size, combined_model
 
-    def compile(self,gen_lr=1e-4,disc_lr=1e-4,**kwargs):
+    def compile(self,gen_lr=2e-4,disc_lr=2e-4,**kwargs):
         super().compile(**kwargs)
-        self.generator_optimizer = keras.optimizers.Adam(gen_lr,beta_1 = 0.0)
-        self.discriminator_optimizer = keras.optimizers.Adam(disc_lr,beta_1=0.0)
+        self.generator_optimizer = keras.optimizers.Adam(gen_lr,beta_1 = 0.5)
+        self.discriminator_optimizer = keras.optimizers.Adam(disc_lr,beta_1=0.5)
         self.discriminator_loss = DiscriminatorLoss()
         self.feature_matching_loss = FeatureMatchingLoss()
         self.vgg_loss = VGGFeatureMatchingLoss()

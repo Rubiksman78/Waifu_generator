@@ -5,15 +5,25 @@ import matplotlib.pyplot as plt
 from glob import glob
 from segmentation_pipeline_bis import * 
 from gaugan_class import *
+import wandb
+from wandb.keras import WandbCallback
+
 #%%
+wandb.init(project="test-project", entity="waifugen",name="true_run")
+wandb.config = {
+  "learning_rate": 2e-4,
+  "epochs": 100,
+  "batch_size": 16
+}
+
 ###Load dataset###
-perso_path = 'C:/SAMUEL/Centrale/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
+perso_path = 'C:/SAMUEL/CS/Automatants/Waifu_generator/' #Mettre votre path local vers le repo
 dataset_path = perso_path + 'crash_test_gaugan/images/'
 
 BATCH_SIZE = 16
-IMG_HEIGHT = IMG_WIDTH = 256
+IMG_HEIGHT = IMG_WIDTH = 64
 NUM_CLASSES = 7
-buffer_size = 1
+buffer_size = 50
 
 def define_dataset(dataset_path, batch_size, buffer_size):
     training_data = "training/"
@@ -39,18 +49,16 @@ def define_dataset(dataset_path, batch_size, buffer_size):
         train_images
         .cache()
         .shuffle(buffer_size)
-        .take(10000)
+        .take(40000)
         .batch(batch_size,drop_remainder=True)
-        .map(Augment())
         .map(One_Hot_bis())
-        .repeat(1)
         .prefetch(buffer_size=tf.data.AUTOTUNE))
 
     test_batches = test_images.batch(batch_size,drop_remainder=True).map(One_Hot_bis())
     return train_batches, test_batches
 
 def display(display_list):
-    plt.figure(figsize=(15, 15))
+    plt.figure(figsize=(8, 8))
     title = ['Input Image', 'True Mask', 'Predicted Mask']
     for i in range(len(display_list)):
         plt.subplot(1, len(display_list), i+1)
@@ -101,6 +109,7 @@ class GanMonitor(keras.callbacks.Callback):
         return self.model.predict([latent_vector, self.val_images[2]])
 
     def on_epoch_end(self, epoch, logs=None):
+        figure = plt.figure(figsize=(12,12))
         if epoch % self.epoch_interval == 0:
             generated_images = self.infer()
             for _ in range(self.n_samples):
@@ -117,30 +126,41 @@ class GanMonitor(keras.callbacks.Callback):
                     ax[2].imshow((generated_images[row] + 1) / 2)
                     ax[2].axis("off")
                     ax[2].set_title("Generated", fontsize=20)
-                plt.show()
+        filename = f"im_epoch_{epoch+29}.png"
+        wandb.log({"examples": plt})
+        plt.savefig(filename)
+        plt.close()         
+
+class Wandb_Custom(keras.callbacks.Callback):
+    def __init__(self):
+        super(Wandb_Custom, self).__init__()
+            
+    def on_epoch_end(self, epoch, logs={}):
+        results = {'disc_loss':logs['disc_loss'], 'gen_loss':logs['gen_loss'], 'feat_loss':logs['feat_loss'], 'vgg_loss':logs['vgg_loss'],'kl_loss':logs['kl_loss']}
+        wandb.log(results)
 # %%
 gaugan = GauGAN(IMG_HEIGHT,NUM_CLASSES,BATCH_SIZE,latent_dim=256)
 gaugan.compile()
-#gaugan.generator.load_weights('gen_weights.h5')
-#gaugan.discriminator.load_weights('disc_weights.h5')
+gaugan.generator.load_weights('gen_weights.h5')
+gaugan.discriminator.load_weights('disc_weights.h5')
 #%%
-gaugan.fit(train_batches,epochs=100,callbacks=[GanMonitor(train_batches,1),save_weights()])
+gaugan.fit(train_batches,epochs=1000,callbacks=[save_weights(),GanMonitor(train_batches,1),WandbCallback(),Wandb_Custom()])
 # %%
 ###Test 
 test_dataset = tf.keras.utils.image_dataset_from_directory(
-  "C:/SAMUEL/Centrale/Automatants/Waifu_generator/segmentation_waifus/annotations/training/",
+  "C:/SAMUEL/CS/Automatants/Waifu_generator/segmentation_waifus/annotations/training/",
   labels=None,
   image_size=(64, 64),
   batch_size=4).map(normalize_maskbis)
 
 gen = gaugan.generator
-
+#%%
 def show_pairs(true_images):
     style = tf.random.normal((4,256))
     for true_image in true_images.take(1):
         preds = gen([style,true_image])
         for i,image in enumerate(preds):
-            f, ax = plt.subplots(1, 2, figsize=(10,10))
+            f, ax = plt.subplots(1, 2, figsize=(8,8))
             ax[0].imshow(inv_mask(true_image[i]))
             ax[0].axis("off")
             ax[0].set_title("Mask", fontsize=20)

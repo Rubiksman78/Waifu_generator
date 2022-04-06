@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from keras import layers
+import tensorflow_addons as tfa
 
 hair = str([66, 64, 183])
 eyes = str([38,153,174])
@@ -133,28 +134,8 @@ class Augment(tf.keras.layers.Layer):
         )
         return image, mask,true_mask
 
-    def apply_resize_crop(self,image,mask,true_mask):
-        NUM_BOXES = tf.shape(image)[0]
-        CROP_SIZE = (256,256)
-        condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
-        boxes = tf.random.uniform(shape=(NUM_BOXES, 4))
-        box_indices = tf.range(0, NUM_BOXES, dtype=tf.int32)
-        image = tf.cond(
-            condition, lambda: tf.image.crop_and_resize(image, boxes, box_indices, CROP_SIZE),
-            lambda: tf.identity(image)
-        )
-        mask =  tf.cond(
-            condition, lambda: tf.image.crop_and_resize(mask, boxes, box_indices, CROP_SIZE),
-            lambda: tf.identity(mask)
-        )
-        true_mask =  tf.cond(
-            condition, lambda: tf.image.crop_and_resize(true_mask, boxes, box_indices, CROP_SIZE),
-            lambda: tf.identity(true_mask)
-        )
-        return image,mask,true_mask
-
     def crop_size(self,image,mask,true_mask):
-        size = np.random.randint(128,164)
+        size = np.random.randint(60,150)
         batch_size = tf.shape(image)[0]
         size = [batch_size,size,size,3]
         condition = tf.cast(tf.random.uniform([], maxval=2, dtype=tf.int32), tf.bool)
@@ -176,6 +157,48 @@ class Augment(tf.keras.layers.Layer):
         true_mask = tf.image.resize(true_mask,size=im_size)
         return image,mask,true_mask
 
+    def warp(images, points, dest_points, output_size=None, interpolation='NEAREST'):
+        """
+    Applies perspective warping to a batch of images
+    given 4 source points and 4 destination points on each image.
+    
+    images - Tensor (BxHxWxC)
+    points - Tensor (Bx4x2), normalized coordinates
+    dest_points - Tensor (Bx4x2), normalized coordinates
+    output_size - Optional size (WxH) of the output tensor
+    interpolation - An interpolation mode supported by tfa.image.transform. 'NEAREST' or 'BILINEAR'.
+    
+    Returns the warped images in a tensor (BxHxWxC).
+        If output_size is not None, H and W are taken from output_size,
+        otherwise they're taken from the shape of `images`.
+    """    
+        assert tf.shape(images)[0] == tf.shape(points)[0]
+        assert tf.shape(images)[0] == tf.shape(dest_points)[0]
+
+        points = tf.ensure_shape(points, (None, 4, 2))
+        dest_points = tf.ensure_shape(dest_points, (None, 4, 2))
+
+        batch = tf.shape(images)[0]
+        height = tf.shape(images)[1]
+        width = tf.shape(images)[2]
+
+        points, dest_points = dest_points, points
+        dest_points *= (width, height)
+        points *= (width, height) if output_size is None else output_size
+        
+        M = tf.concat([points, tf.ones((batch, 4, 1), dtype=points.dtype)], axis=-1)
+        M = tf.reshape(tf.einsum('bij,lm->blimj', M, tf.eye(2, dtype=M.dtype)), (-1, 8, 6))
+        M2 = tf.reshape(tf.einsum('bij,bik->bkij', points, dest_points), (-1, 8, 2))
+        M = tf.concat([M, -M2], axis=-1)
+        R = tf.reshape(tf.transpose(dest_points, (0, 2, 1)), (-1, 8))
+
+        R = tf.reshape(R, (-1, 8, 1))
+        T = tf.linalg.solve(M, R)
+        T = tf.reshape(T, (-1, 8))
+        
+        output_shape = None if output_size is None else (output_size[1], output_size[0])
+        return tfa.image.transform(images, T, output_shape=output_shape, interpolation=interpolation)
+
     def call(self, inputs, labels ,true_labels):
         inputs = self.augment_inputs(inputs)
         labels = self.augment_labels(labels)
@@ -185,7 +208,6 @@ class Augment(tf.keras.layers.Layer):
         inputs,labels,true_labels = self.apply_random_saturation(inputs,labels,true_labels)
         inputs,labels,true_labels = self.apply_hue(inputs,labels,true_labels)
         inputs,labels,true_labels = self.apply_noise(inputs,labels,true_labels)
-        #inputs,labels,true_labels = self.apply_resize_crop(inputs,labels,true_labels)
         inputs,labels,true_labels = self.crop_size(inputs,labels,true_labels)
         return inputs, labels, true_labels
 
