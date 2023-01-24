@@ -1,4 +1,4 @@
-# Waifu_generator
+# Waifu Generator
 
 Projet de génération de personnages d'anime à l'aide de GAN principalement.
 
